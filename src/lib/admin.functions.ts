@@ -227,8 +227,8 @@ export const updateSettingAdmin = createServerFn({ method: "POST" })
       p_actor_type: "admin",
       p_action: "settings.updated",
       p_entity_type: "setting",
-      p_entity_id: null,
-      p_meta: { key: data.key, value: data.value as never },
+      p_entity_id: data.key,
+      p_meta: { key: data.key, value: data.value } as never,
     });
     return { ok: true };
   });
@@ -265,7 +265,7 @@ export const upsertPackageAdmin = createServerFn({ method: "POST" })
       p_actor_type: "admin",
       p_action: id ? "package.updated" : "package.created",
       p_entity_type: "package",
-      p_entity_id: id ?? null,
+      p_entity_id: id ?? data.slug,
       p_meta: { slug: data.slug, price_kes: data.price_kes },
     });
     return { ok: true };
