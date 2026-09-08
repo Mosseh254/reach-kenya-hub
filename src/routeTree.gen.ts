@@ -12,6 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as PackagesRouteImport } from './routes/packages'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as ApiPublicHooksExpireActivationsRouteImport } from './routes/api/public/hooks/expire-activations'
 import { Route as ApiPublicMpesaCallbackRouteImport } from './routes/api/public/mpesa/callback'
@@ -28,6 +34,36 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PackagesRoute = PackagesRouteImport.update({
+  id: '/packages',
+  path: '/packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -50,6 +86,12 @@ const ApiPublicMpesaCallbackRoute = ApiPublicMpesaCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/packages': typeof PackagesRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRouteRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -57,6 +99,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/packages': typeof PackagesRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRouteRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -66,6 +114,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/packages': typeof PackagesRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -75,6 +129,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/contact'
+    | '/faq'
+    | '/how-it-works'
+    | '/packages'
+    | '/privacy'
+    | '/terms'
     | '/admin'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
@@ -82,6 +142,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/contact'
+    | '/faq'
+    | '/how-it-works'
+    | '/packages'
+    | '/privacy'
+    | '/terms'
     | '/admin'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
@@ -90,6 +156,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/contact'
+    | '/faq'
+    | '/how-it-works'
+    | '/packages'
+    | '/privacy'
+    | '/terms'
     | '/_authenticated/admin'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
@@ -99,6 +171,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ContactRoute: typeof ContactRoute
+  FaqRoute: typeof FaqRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  PackagesRoute: typeof PackagesRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   ApiPublicHooksExpireActivationsRoute: typeof ApiPublicHooksExpireActivationsRoute
   ApiPublicMpesaCallbackRoute: typeof ApiPublicMpesaCallbackRoute
 }
@@ -124,6 +202,48 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/packages': {
+      id: '/packages'
+      path: '/packages'
+      fullPath: '/packages'
+      preLoaderRoute: typeof PackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -165,6 +285,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ContactRoute: ContactRoute,
+  FaqRoute: FaqRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  PackagesRoute: PackagesRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   ApiPublicHooksExpireActivationsRoute: ApiPublicHooksExpireActivationsRoute,
   ApiPublicMpesaCallbackRoute: ApiPublicMpesaCallbackRoute,
 }
