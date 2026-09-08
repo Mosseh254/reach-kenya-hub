@@ -10,33 +10,60 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHooksExpireActivationsRouteImport } from './routes/api/public/hooks/expire-activations'
+import { Route as ApiPublicMpesaCallbackRouteImport } from './routes/api/public/mpesa/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksExpireActivationsRoute =
+  ApiPublicHooksExpireActivationsRouteImport.update({
+    id: '/api/public/hooks/expire-activations',
+    path: '/api/public/hooks/expire-activations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMpesaCallbackRoute = ApiPublicMpesaCallbackRouteImport.update({
+  id: '/api/public/mpesa/callback',
+  path: '/api/public/mpesa/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
+  '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
+  '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
+  '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/api/public/hooks/expire-activations' | '/api/public/mpesa/callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    '/' | '/api/public/hooks/expire-activations' | '/api/public/mpesa/callback'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/hooks/expire-activations'
+    | '/api/public/mpesa/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicHooksExpireActivationsRoute: typeof ApiPublicHooksExpireActivationsRoute
+  ApiPublicMpesaCallbackRoute: typeof ApiPublicMpesaCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +75,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/expire-activations': {
+      id: '/api/public/hooks/expire-activations'
+      path: '/api/public/hooks/expire-activations'
+      fullPath: '/api/public/hooks/expire-activations'
+      preLoaderRoute: typeof ApiPublicHooksExpireActivationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mpesa/callback': {
+      id: '/api/public/mpesa/callback'
+      path: '/api/public/mpesa/callback'
+      fullPath: '/api/public/mpesa/callback'
+      preLoaderRoute: typeof ApiPublicMpesaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicHooksExpireActivationsRoute: ApiPublicHooksExpireActivationsRoute,
+  ApiPublicMpesaCallbackRoute: ApiPublicMpesaCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
