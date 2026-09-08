@@ -22,7 +22,7 @@ export interface StkPushInput {
 
 export interface StkPushResult {
   checkoutRequestId: string;
-  merchantRequestId?: string;
+  merchantRequestId?: string | undefined;
   customerMessage: string;
 }
 

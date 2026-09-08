@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 function publicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
@@ -35,7 +35,7 @@ export const getPublicCatalog = createServerFn({ method: "GET" }).handler(async 
       .order("created_at"),
     sb.from("app_settings").select("key,value").eq("is_public", true),
   ]);
-  const settingsMap: Record<string, unknown> = {};
+  const settingsMap: Record<string, Json> = {};
   for (const s of settings.data ?? []) settingsMap[s.key] = s.value;
   return {
     packages: (pk.data ?? []) as PackageRow[],
