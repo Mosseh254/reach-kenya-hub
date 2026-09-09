@@ -156,5 +156,7 @@ class DarajaMpesaAdapter implements MpesaAdapter {
 }
 
 export function getMpesaAdapter(): MpesaAdapter {
-  return getPaymentMode() === "daraja" ? new DarajaMpesaAdapter() : new MockMpesaAdapter();
+  const mode = getPaymentMode();
+  if (mode === "intasend") return new IntasendAdapter();
+  return mode === "daraja" ? new DarajaMpesaAdapter() : new MockMpesaAdapter();
 }
