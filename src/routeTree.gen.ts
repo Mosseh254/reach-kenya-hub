@@ -24,6 +24,7 @@ import { Route as AuthenticatedChoosePackageRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedReferralsRouteImport } from './routes/_authenticated/referrals'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSubmissionsRouteImport } from './routes/_authenticated/submissions'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedBuyPackageIdRouteImport } from './routes/_authenticated/buy.$packageId'
@@ -108,6 +109,11 @@ const AuthenticatedReferralsRoute = AuthenticatedReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSubmissionsRoute =
   AuthenticatedSubmissionsRouteImport.update({
     id: '/submissions',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/referrals': typeof AuthenticatedReferralsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/referrals': typeof AuthenticatedReferralsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/referrals': typeof AuthenticatedReferralsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/submissions': typeof AuthenticatedSubmissionsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/notifications'
     | '/referrals'
+    | '/settings'
     | '/submissions'
     | '/wallet'
     | '/buy/$packageId'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/notifications'
     | '/referrals'
+    | '/settings'
     | '/submissions'
     | '/wallet'
     | '/buy/$packageId'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/notifications'
     | '/_authenticated/referrals'
+    | '/_authenticated/settings'
     | '/_authenticated/submissions'
     | '/_authenticated/wallet'
     | '/_authenticated/buy/$packageId'
@@ -414,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReferralsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/submissions': {
       id: '/_authenticated/submissions'
       path: '/submissions'
@@ -473,6 +492,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedReferralsRoute: typeof AuthenticatedReferralsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSubmissionsRoute: typeof AuthenticatedSubmissionsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedBuyPackageIdRoute: typeof AuthenticatedBuyPackageIdRoute
@@ -487,6 +507,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedReferralsRoute: AuthenticatedReferralsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSubmissionsRoute: AuthenticatedSubmissionsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedBuyPackageIdRoute: AuthenticatedBuyPackageIdRoute,
