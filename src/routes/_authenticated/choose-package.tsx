@@ -89,7 +89,7 @@ function ChoosePackagePage() {
             </table>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            Prices, durations and rewards are confirmed on our server at checkout. Rewards depend on passing verification.
+            Prices, durations and rewards are confirmed on our server at checkout.&nbsp;
           </p>
         </>
       )}
