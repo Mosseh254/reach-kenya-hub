@@ -141,7 +141,8 @@ export const createOrder = createServerFn({ method: "POST" })
         campaign_id: data.campaignId,
         amount_kes: pkg.price_kes,
         phone,
-        provider: adapter.mode === "daraja" ? "mpesa_daraja" : "mpesa_mock",
+        provider:
+          adapter.mode === "intasend" ? "mpesa_intasend" : adapter.mode === "daraja" ? "mpesa_daraja" : "mpesa_mock",
       })
       .select("*")
       .single();
