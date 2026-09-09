@@ -279,3 +279,154 @@ export const listAuditAdmin = createServerFn({ method: "GET" })
     const { data } = await sa.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(300);
     return data ?? [];
   });
+
+/** Approved rewards + wallet balances + payout history for the admin payouts page. */
+export const getPayoutsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+    const [{ data: approved }, { data: txs }, { data: withdrawals }, { data: settings }] = await Promise.all([
+      sa
+        .from("submissions")
+        .select("id, user_id, reward_kes, reviewed_at, campaign:campaigns(title)")
+        .eq("status", "approved")
+        .order("reviewed_at", { ascending: true })
+        .limit(1000),
+      sa.from("wallet_transactions").select("ref_id").eq("ref_type", "submission").limit(5000),
+      sa.from("withdrawals").select("*").order("created_at", { ascending: false }).limit(500),
+      sa.from("app_settings").select("key, value").in("key", ["min_withdrawal_kes"]),
+    ]);
+    const credited = new Set((txs ?? []).map((t) => t.ref_id));
+    const unreleased = (approved ?? []).filter((s) => !credited.has(s.id) && (s.reward_kes ?? 0) > 0);
+
+    const ids = [...new Set([...unreleased.map((s) => s.user_id), ...(withdrawals ?? []).map((w) => w.user_id)])];
+    const [{ data: profiles }, { data: wallets }] = await Promise.all([
+      ids.length ? sa.from("profiles").select("user_id, full_name, email, phone").in("user_id", ids) : Promise.resolve({ data: [] }),
+      ids.length ? sa.from("wallets").select("*").in("user_id", ids) : Promise.resolve({ data: [] }),
+    ]);
+    const p = new Map((profiles ?? []).map((x) => [x.user_id, x]));
+    const w = new Map((wallets ?? []).map((x) => [x.user_id, x]));
+
+    const grouped = new Map<string, { userId: string; submissionIds: string[]; amountKes: number }>();
+    for (const s of unreleased) {
+      const g = grouped.get(s.user_id) ?? { userId: s.user_id, submissionIds: [], amountKes: 0 };
+      g.submissionIds.push(s.id);
+      g.amountKes += s.reward_kes ?? 0;
+      grouped.set(s.user_id, g);
+    }
+
+    const minWithdrawal = Number((settings ?? []).find((s) => s.key === "min_withdrawal_kes")?.value ?? 0);
+
+    return {
+      minWithdrawalKes: Number.isFinite(minWithdrawal) ? minWithdrawal : 0,
+      pendingRelease: [...grouped.values()].map((g) => ({
+        ...g,
+        user: p.get(g.userId) ?? null,
+        wallet: w.get(g.userId) ?? null,
+      })),
+      payable: (wallets ?? [])
+        .filter((x) => x.balance_kes > 0)
+        .map((x) => ({ userId: x.user_id, wallet: x, user: p.get(x.user_id) ?? null }))
+        .sort((a, b) => b.wallet.balance_kes - a.wallet.balance_kes),
+      payouts: (withdrawals ?? []).map((x) => ({ ...x, user: p.get(x.user_id) ?? null })),
+    };
+  });
+
+/** Credit approved-but-uncredited submission rewards into a member's wallet. */
+export const releaseRewardsAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+    const [{ data: approved }, { data: txs }] = await Promise.all([
+      sa.from("submissions").select("id, reward_kes").eq("status", "approved").eq("user_id", data.userId).limit(1000),
+      sa.from("wallet_transactions").select("ref_id").eq("ref_type", "submission").eq("user_id", data.userId).limit(5000),
+    ]);
+    const credited = new Set((txs ?? []).map((t) => t.ref_id));
+    const todo = (approved ?? []).filter((s) => !credited.has(s.id) && (s.reward_kes ?? 0) > 0);
+    if (!todo.length) return { released: 0, amountKes: 0 };
+
+    const { data: wallet } = await sa.from("wallets").select("*").eq("user_id", data.userId).single();
+    if (!wallet) throw new Error("Member wallet not found.");
+    let balance = wallet.balance_kes;
+    let amountKes = 0;
+    for (const s of todo) {
+      const amount = s.reward_kes ?? 0;
+      balance += amount;
+      amountKes += amount;
+      const { error } = await sa.from("wallet_transactions").insert({
+        user_id: data.userId,
+        type: "reward",
+        amount_kes: amount,
+        balance_after_kes: balance,
+        ref_type: "submission",
+        ref_id: s.id,
+        description: "Approved reward released to wallet",
+      });
+      if (error) throw new Error(error.message);
+    }
+    const { error: wErr } = await sa
+      .from("wallets")
+      .update({ balance_kes: balance, lifetime_earned_kes: wallet.lifetime_earned_kes + amountKes })
+      .eq("user_id", data.userId);
+    if (wErr) throw new Error(wErr.message);
+
+    await sa.from("notifications").insert({
+      user_id: data.userId,
+      kind: "wallet",
+      title: "Rewards released to your wallet",
+      body: `KES ${amountKes.toLocaleString("en-KE")} from approved posts is now available in your wallet.`,
+      link: "/wallet",
+    });
+    await sa.rpc("log_audit", {
+      p_actor: context.userId,
+      p_actor_type: "admin",
+      p_action: "rewards.released",
+      p_entity_type: "user",
+      p_entity_id: data.userId,
+      p_meta: { amount_kes: amountKes, submissions: todo.length } as never,
+    });
+    return { released: todo.length, amountKes };
+  });
+
+/** Send a real-money payout from a member's wallet balance and record the M-Pesa receipt. */
+export const payMemberAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        amountKes: z.number().int().min(1),
+        phone: z.string().min(9).max(15),
+        receipt: z.string().max(40).optional(),
+        note: z.string().max(300).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+    const { data: wallet } = await sa.from("wallets").select("balance_kes").eq("user_id", data.userId).single();
+    if (!wallet || wallet.balance_kes < data.amountKes) throw new Error("Member balance is lower than the payout amount.");
+
+    const { data: wd, error } = await sa.rpc("request_withdrawal", {
+      p_user_id: data.userId,
+      p_amount: data.amountKes,
+      p_phone: data.phone,
+    });
+    if (error) throw new Error(error.message);
+    const withdrawalId = (wd as { id: string } | null)?.id;
+    if (!withdrawalId) throw new Error("Could not create the payout record.");
+
+    const { data: paid, error: payErr } = await sa.rpc("process_withdrawal", {
+      p_admin: context.userId,
+      p_withdrawal_id: withdrawalId,
+      p_decision: "paid",
+      p_note: data.note ?? "Payout sent by admin",
+      p_receipt: data.receipt ?? "",
+    });
+    if (payErr) throw new Error(payErr.message);
+    return paid;
+  });
