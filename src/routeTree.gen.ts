@@ -19,6 +19,7 @@ import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiPublicHooksExpireActivationsRouteImport } from './routes/api/public/hooks/expire-activations'
 import { Route as ApiPublicMpesaCallbackRouteImport } from './routes/api/public/mpesa/callback'
 
@@ -71,6 +72,11 @@ const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiPublicHooksExpireActivationsRoute =
   ApiPublicHooksExpireActivationsRouteImport.update({
     id: '/api/public/hooks/expire-activations',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRouteRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRouteRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/admin'
+    | '/dashboard'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/admin'
+    | '/dashboard'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
   id:
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/_authenticated/admin'
+    | '/_authenticated/dashboard'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
   fileRoutesById: FileRoutesById
@@ -253,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/hooks/expire-activations': {
       id: '/api/public/hooks/expire-activations'
       path: '/api/public/hooks/expire-activations'
@@ -272,10 +291,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
