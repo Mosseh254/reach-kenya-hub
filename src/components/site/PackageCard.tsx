@@ -29,7 +29,7 @@ export function PackageCard({ pkg, featured, buyTo }: { pkg: PackageRow; feature
           <Link to="/auth" search={{ mode: "signup" }}>Get {pkg.name}</Link>
         )}
       </Button>
-      <p className="mt-3 text-center text-[11px] text-muted-foreground">Rewards depend on verification. Not guaranteed.</p>
+      <p className="mt-3 text-center text-[11px] text-muted-foreground"></p>
     </div>
   );
 }
