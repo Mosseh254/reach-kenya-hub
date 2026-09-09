@@ -38,7 +38,6 @@ import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_aut
 import { Route as AuthenticatedBuyPackageIdRouteImport } from './routes/_authenticated/buy.$packageId'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders.index'
 import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders.$orderId'
-import { Route as ApiPublicDiagIsCheckRouteImport } from './routes/api/public/diag/is-check'
 import { Route as ApiPublicHooksExpireActivationsRouteImport } from './routes/api/public/hooks/expire-activations'
 import { Route as ApiPublicIntasendWebhookRouteImport } from './routes/api/public/intasend/webhook'
 import { Route as ApiPublicMpesaCallbackRouteImport } from './routes/api/public/mpesa/callback'
@@ -198,11 +197,6 @@ const AuthenticatedOrdersOrderIdRoute =
     path: '/orders/$orderId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicDiagIsCheckRoute = ApiPublicDiagIsCheckRouteImport.update({
-  id: '/api/public/diag/is-check',
-  path: '/api/public/diag/is-check',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksExpireActivationsRoute =
   ApiPublicHooksExpireActivationsRouteImport.update({
     id: '/api/public/hooks/expire-activations',
@@ -250,7 +244,6 @@ export interface FileRoutesByFullPath {
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/orders/': typeof AuthenticatedOrdersIndexRoute
-  '/api/public/diag/is-check': typeof ApiPublicDiagIsCheckRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/intasend/webhook': typeof ApiPublicIntasendWebhookRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -283,7 +276,6 @@ export interface FileRoutesByTo {
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
-  '/api/public/diag/is-check': typeof ApiPublicDiagIsCheckRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/intasend/webhook': typeof ApiPublicIntasendWebhookRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -319,7 +311,6 @@ export interface FileRoutesById {
   '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
-  '/api/public/diag/is-check': typeof ApiPublicDiagIsCheckRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/intasend/webhook': typeof ApiPublicIntasendWebhookRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -355,7 +346,6 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/admin/'
     | '/orders/'
-    | '/api/public/diag/is-check'
     | '/api/public/hooks/expire-activations'
     | '/api/public/intasend/webhook'
     | '/api/public/mpesa/callback'
@@ -388,7 +378,6 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/admin'
     | '/orders'
-    | '/api/public/diag/is-check'
     | '/api/public/hooks/expire-activations'
     | '/api/public/intasend/webhook'
     | '/api/public/mpesa/callback'
@@ -423,7 +412,6 @@ export interface FileRouteTypes {
     | '/_authenticated/orders/$orderId'
     | '/_authenticated/admin/'
     | '/_authenticated/orders/'
-    | '/api/public/diag/is-check'
     | '/api/public/hooks/expire-activations'
     | '/api/public/intasend/webhook'
     | '/api/public/mpesa/callback'
@@ -439,7 +427,6 @@ export interface RootRouteChildren {
   PackagesRoute: typeof PackagesRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
-  ApiPublicDiagIsCheckRoute: typeof ApiPublicDiagIsCheckRoute
   ApiPublicHooksExpireActivationsRoute: typeof ApiPublicHooksExpireActivationsRoute
   ApiPublicIntasendWebhookRoute: typeof ApiPublicIntasendWebhookRoute
   ApiPublicMpesaCallbackRoute: typeof ApiPublicMpesaCallbackRoute
@@ -650,13 +637,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrdersOrderIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/diag/is-check': {
-      id: '/api/public/diag/is-check'
-      path: '/api/public/diag/is-check'
-      fullPath: '/api/public/diag/is-check'
-      preLoaderRoute: typeof ApiPublicDiagIsCheckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/expire-activations': {
       id: '/api/public/hooks/expire-activations'
       path: '/api/public/hooks/expire-activations'
@@ -752,7 +732,6 @@ const rootRouteChildren: RootRouteChildren = {
   PackagesRoute: PackagesRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
-  ApiPublicDiagIsCheckRoute: ApiPublicDiagIsCheckRoute,
   ApiPublicHooksExpireActivationsRoute: ApiPublicHooksExpireActivationsRoute,
   ApiPublicIntasendWebhookRoute: ApiPublicIntasendWebhookRoute,
   ApiPublicMpesaCallbackRoute: ApiPublicMpesaCallbackRoute,
