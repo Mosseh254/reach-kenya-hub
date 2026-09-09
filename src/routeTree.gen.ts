@@ -29,6 +29,7 @@ import { Route as AuthenticatedSubmissionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminSubmissionsRouteImport } from './routes/_authenticated/admin/submissions'
+import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin/withdrawals'
 import { Route as AuthenticatedBuyPackageIdRouteImport } from './routes/_authenticated/buy.$packageId'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders.index'
 import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders.$orderId'
@@ -138,6 +139,12 @@ const AuthenticatedAdminSubmissionsRoute =
     path: '/submissions',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminWithdrawalsRoute =
+  AuthenticatedAdminWithdrawalsRouteImport.update({
+    id: '/withdrawals',
+    path: '/withdrawals',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedBuyPackageIdRoute =
   AuthenticatedBuyPackageIdRouteImport.update({
     id: '/buy/$packageId',
@@ -187,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/submissions': typeof AuthenticatedAdminSubmissionsRoute
+  '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -212,6 +220,7 @@ export interface FileRoutesByTo {
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/submissions': typeof AuthenticatedAdminSubmissionsRoute
+  '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -240,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/submissions': typeof AuthenticatedSubmissionsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/admin/submissions': typeof AuthenticatedAdminSubmissionsRoute
+  '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
   '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/wallet'
     | '/admin/submissions'
+    | '/admin/withdrawals'
     | '/buy/$packageId'
     | '/orders/$orderId'
     | '/admin/'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/wallet'
     | '/admin/submissions'
+    | '/admin/withdrawals'
     | '/buy/$packageId'
     | '/orders/$orderId'
     | '/admin'
@@ -320,6 +332,7 @@ export interface FileRouteTypes {
     | '/_authenticated/submissions'
     | '/_authenticated/wallet'
     | '/_authenticated/admin/submissions'
+    | '/_authenticated/admin/withdrawals'
     | '/_authenticated/buy/$packageId'
     | '/_authenticated/orders/$orderId'
     | '/_authenticated/admin/'
@@ -484,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSubmissionsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/withdrawals': {
+      id: '/_authenticated/admin/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/admin/withdrawals'
+      preLoaderRoute: typeof AuthenticatedAdminWithdrawalsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/buy/$packageId': {
       id: '/_authenticated/buy/$packageId'
       path: '/buy/$packageId'
@@ -524,12 +544,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSubmissionsRoute: typeof AuthenticatedAdminSubmissionsRoute
+  AuthenticatedAdminWithdrawalsRoute: typeof AuthenticatedAdminWithdrawalsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminSubmissionsRoute: AuthenticatedAdminSubmissionsRoute,
+    AuthenticatedAdminWithdrawalsRoute: AuthenticatedAdminWithdrawalsRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   }
 
