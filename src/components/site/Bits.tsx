@@ -63,8 +63,8 @@ export function SandboxBanner({ mode }: { mode: string }) {
   if (mode !== "mock") return null;
   return (
     <div className="rounded-xl border border-warning/50 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
-      <strong>Development sandbox:</strong> M-Pesa is running in mock mode. No real STK prompt is sent and no money
-      moves. Add Daraja credentials to switch to live payments.
+      <strong>Development sandbox:</strong> M-Pesa is running in mock mode. No real prompt is sent and no money moves.
+      Add your IntaSend keys to switch on live payments.
     </div>
   );
 }
