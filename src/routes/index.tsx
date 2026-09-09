@@ -74,7 +74,7 @@ function Landing() {
               </Button>
             </div>
             <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 text-sm">
-              {[["7–30 days", "campaign windows"], ["KES 20–45", "per View"], ["1 / day", "screenshot per campaign"]].map(([v, l]) => (
+              {[["7–14 days", "campaign windows"], ["KES 20–45", "per View"], ["1 / day", "screenshot per campaign"]].map(([v, l]) => (
                 <div key={l}><dt className="font-display text-xl font-bold">{v}</dt><dd className="text-ink-foreground/60">{l}</dd></div>
               ))}
             </dl>
