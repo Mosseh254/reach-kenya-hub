@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 
 export function PackageCard({ pkg, featured, buyTo }: { pkg: PackageRow; featured?: boolean; buyTo?: "auth" | "buy" }) {
   const features = Array.isArray(pkg.features) ? (pkg.features as string[]) : [];
-  const maxTotal = pkg.reward_per_post_kes * pkg.max_rewarded_posts;
   return (
     <div className={cn("relative flex flex-col rounded-3xl border bg-card p-7 shadow-soft", featured ? "border-primary ring-2 ring-primary/30" : "border-border")}>
       {featured && <span className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">Most popular</span>}
@@ -18,11 +17,6 @@ export function PackageCard({ pkg, featured, buyTo }: { pkg: PackageRow; feature
         <span className="text-sm text-muted-foreground">/ {pkg.duration_days} days</span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">One-off package fee</p>
-      <div className="mt-5 rounded-xl bg-muted p-4 text-sm">
-        <div className="flex justify-between"><span className="text-muted-foreground">Reward per verified post</span><strong>{kes(pkg.reward_per_post_kes)}</strong></div>
-        <div className="mt-1 flex justify-between"><span className="text-muted-foreground">Max rewarded posts</span><strong>{pkg.max_rewarded_posts}</strong></div>
-        <div className="mt-1 flex justify-between"><span className="text-muted-foreground">Max total rewards</span><strong>{kes(maxTotal)}</strong></div>
-      </div>
       <ul className="mt-5 flex-1 space-y-2 text-sm">
         {features.map((f) => (
           <li key={f} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />{f}</li>

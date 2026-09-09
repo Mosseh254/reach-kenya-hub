@@ -67,8 +67,7 @@ function ChoosePackagePage() {
                   <th scope="col" className="px-4 py-3">Package</th>
                   <th scope="col" className="px-4 py-3">Fee</th>
                   <th scope="col" className="px-4 py-3">Duration</th>
-                  <th scope="col" className="px-4 py-3">Per verified post</th>
-                  <th scope="col" className="px-4 py-3">Max rewarded posts</th>
+                  <th scope="col" className="px-4 py-3">Per View</th>
                   <th scope="col" className="px-4 py-3" />
                 </tr>
               </thead>
@@ -79,7 +78,6 @@ function ChoosePackagePage() {
                     <td className="px-4 py-3">{kes(p.price_kes)}</td>
                     <td className="px-4 py-3">{p.duration_days} days</td>
                     <td className="px-4 py-3">{kes(p.reward_per_post_kes)}</td>
-                    <td className="px-4 py-3">{p.max_rewarded_posts}</td>
                     <td className="px-4 py-3 text-right">
                       <Button asChild size="sm" variant="outline">
                         <Link to="/buy/$packageId" params={{ packageId: p.id }}>Select</Link>

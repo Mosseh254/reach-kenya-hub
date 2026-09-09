@@ -74,7 +74,7 @@ function Landing() {
               </Button>
             </div>
             <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 text-sm">
-              {[["7–30 days", "campaign windows"], ["KES 20–45", "per verified post"], ["1 / day", "screenshot per campaign"]].map(([v, l]) => (
+              {[["7–14 days", "campaign windows"], ["KES 20–45", "per View"], ["1 / day", "screenshot per campaign"]].map(([v, l]) => (
                 <div key={l}><dt className="font-display text-xl font-bold">{v}</dt><dd className="text-ink-foreground/60">{l}</dd></div>
               ))}
             </dl>
@@ -128,7 +128,7 @@ function Landing() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-primary">Packages</p>
-              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">One fee. Fixed rewards per verified post.</h2>
+              <h2 className="mt-2 text-3xl font-bold sm:text-4xl">One fee. Fixed rewards per View.</h2>
             </div>
             <p className="max-w-sm text-sm text-muted-foreground">
               The package price is a purchase fee for campaign access. Rewards are earned only when a post is verified.

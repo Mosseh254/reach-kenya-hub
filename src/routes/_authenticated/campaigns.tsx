@@ -158,7 +158,7 @@ function CampaignCard({ activation, now }: { activation: ActivationRow; now: num
 
       <dl className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl bg-muted/50 p-3">
-          <dt className="text-xs text-muted-foreground">Reward per approved post</dt>
+          <dt className="text-xs text-muted-foreground">Per View</dt>
           <dd className="font-semibold">{kes(pkg.reward_per_post_kes ?? 0)}</dd>
         </div>
         <div className="rounded-xl bg-muted/50 p-3">
