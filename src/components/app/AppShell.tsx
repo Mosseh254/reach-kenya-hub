@@ -39,6 +39,7 @@ const adminNav = [
   { to: "/admin", label: "Admin overview" },
   { to: "/admin/submissions", label: "Review queue" },
   { to: "/admin/withdrawals", label: "Withdrawals" },
+  { to: "/admin/payouts", label: "Payouts" },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/orders", label: "Orders" },
   { to: "/admin/settings", label: "Packages & settings" },
