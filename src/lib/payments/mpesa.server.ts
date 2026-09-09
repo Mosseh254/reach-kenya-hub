@@ -10,7 +10,7 @@
  * The adapter is chosen server-side only; the browser never sees credentials.
  */
 
-export type PaymentMode = "mock" | "daraja";
+export type PaymentMode = "mock" | "daraja" | "intasend";
 
 export interface StkPushInput {
   phone: string; // 2547XXXXXXXX
