@@ -27,6 +27,7 @@ import { Route as AuthenticatedReferralsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSubmissionsRouteImport } from './routes/_authenticated/submissions'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedBuyPackageIdRouteImport } from './routes/_authenticated/buy.$packageId'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders.index'
 import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders.$orderId'
@@ -125,6 +126,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedBuyPackageIdRoute =
   AuthenticatedBuyPackageIdRouteImport.update({
     id: '/buy/$packageId',
@@ -164,7 +170,7 @@ export interface FileRoutesByFullPath {
   '/packages': typeof PackagesRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/admin': typeof AuthenticatedAdminRouteRoute
+  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/campaigns': typeof AuthenticatedCampaignsRoute
   '/choose-package': typeof AuthenticatedChoosePackageRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/orders/': typeof AuthenticatedOrdersIndexRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -188,7 +195,6 @@ export interface FileRoutesByTo {
   '/packages': typeof PackagesRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/admin': typeof AuthenticatedAdminRouteRoute
   '/campaigns': typeof AuthenticatedCampaignsRoute
   '/choose-package': typeof AuthenticatedChoosePackageRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -199,6 +205,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -214,7 +221,7 @@ export interface FileRoutesById {
   '/packages': typeof PackagesRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/campaigns': typeof AuthenticatedCampaignsRoute
   '/_authenticated/choose-package': typeof AuthenticatedChoosePackageRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -225,6 +232,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/buy/$packageId': typeof AuthenticatedBuyPackageIdRoute
   '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
@@ -251,6 +259,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/buy/$packageId'
     | '/orders/$orderId'
+    | '/admin/'
     | '/orders/'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
@@ -264,7 +273,6 @@ export interface FileRouteTypes {
     | '/packages'
     | '/privacy'
     | '/terms'
-    | '/admin'
     | '/campaigns'
     | '/choose-package'
     | '/dashboard'
@@ -275,6 +283,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/buy/$packageId'
     | '/orders/$orderId'
+    | '/admin'
     | '/orders'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/buy/$packageId'
     | '/_authenticated/orders/$orderId'
+    | '/_authenticated/admin/'
     | '/_authenticated/orders/'
     | '/api/public/hooks/expire-activations'
     | '/api/public/mpesa/callback'
@@ -447,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/buy/$packageId': {
       id: '/_authenticated/buy/$packageId'
       path: '/buy/$packageId'
@@ -485,8 +502,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
+  {
+    AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  }
+
+const AuthenticatedAdminRouteRouteWithChildren =
+  AuthenticatedAdminRouteRoute._addFileChildren(
+    AuthenticatedAdminRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRoute
+  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedCampaignsRoute: typeof AuthenticatedCampaignsRoute
   AuthenticatedChoosePackageRoute: typeof AuthenticatedChoosePackageRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -501,7 +532,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRoute,
+  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
   AuthenticatedCampaignsRoute: AuthenticatedCampaignsRoute,
   AuthenticatedChoosePackageRoute: AuthenticatedChoosePackageRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
