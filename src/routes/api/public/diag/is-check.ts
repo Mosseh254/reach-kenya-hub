@@ -19,6 +19,7 @@ export const Route = createFileRoute("/api/public/diag/is-check")({
               "Content-Type": "application/json",
               Accept: "application/json",
               "X-IntaSend-Public-API-Key": pub,
+              "User-Agent": "StatusReachKenya/1.0",
             },
             body: JSON.stringify({ public_key: pub, invoice_id: "KOOV523" }),
           });
