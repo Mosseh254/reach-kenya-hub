@@ -161,9 +161,8 @@ function BuyPage() {
           </div>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-muted-foreground">Runs for</dt><dd>{pkg.duration_days} days</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Reward per verified post</dt><dd>{kes(pkg.reward_per_post_kes)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">Per View</dt><dd>{kes(pkg.reward_per_post_kes)}</dd></div>
             <div className="flex justify-between"><dt className="text-muted-foreground">Posts a day</dt><dd>{pkg.max_posts_per_day}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Max rewarded posts</dt><dd>{pkg.max_rewarded_posts}</dd></div>
           </dl>
           <ul className="mt-4 space-y-2 text-sm">
             {features.map((f) => (
