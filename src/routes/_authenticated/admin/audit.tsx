@@ -73,7 +73,7 @@ function AdminAudit() {
                 {a.entity_type ? ` · ${a.entity_type}` : ""}
                 {a.entity_id ? ` ${a.entity_id}` : ""}
               </p>
-              {a.meta && Object.keys(a.meta as object).length > 0 && (
+              {Boolean(a.meta) && Object.keys(a.meta as object).length > 0 && (
                 <pre className="mt-2 overflow-x-auto rounded-lg bg-muted/60 p-2 text-[11px] text-muted-foreground">
                   {JSON.stringify(a.meta, null, 2)}
                 </pre>
