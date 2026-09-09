@@ -145,8 +145,30 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-display font-bold">StatusReach</span>
           <span className="ml-auto text-sm font-semibold text-primary">{kes(me?.wallet?.balance_kes ?? 0)}</span>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-24 sm:px-6 lg:py-8 lg:pb-8">{children}</main>
+        <nav
+          aria-label="Main"
+          className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-background/95 backdrop-blur lg:hidden"
+        >
+          {userNav.slice(0, 5).map((n) => {
+            const active = path === n.to || (n.to !== "/dashboard" && path.startsWith(n.to));
+            return (
+              <Link
+                key={n.to}
+                to={n.to}
+                className={cn(
+                  "flex flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground",
+                  active && "text-primary",
+                )}
+              >
+                <n.icon className="h-5 w-5" />
+                {n.label.split(" ")[0]}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );
 }
+
