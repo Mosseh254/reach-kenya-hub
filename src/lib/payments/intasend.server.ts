@@ -63,6 +63,10 @@ async function call<T>(path: string, body: Record<string, unknown>): Promise<T> 
       Authorization: `Bearer ${secret}`,
       "Content-Type": "application/json",
       Accept: "application/json",
+      // IntaSend sits behind a WAF that returns "403 error code: 1106" for
+      // requests without a browser-like User-Agent (edge runtime sends none).
+      "User-Agent": "StatusReachKenya/1.0 (+https://reach-kenya-hub.lovable.app)",
+      "Accept-Language": "en-US,en;q=0.9",
       "X-IntaSend-Public-API-Key": publishable,
     },
     body: JSON.stringify(body),
