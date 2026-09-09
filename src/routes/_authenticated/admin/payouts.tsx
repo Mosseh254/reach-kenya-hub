@@ -129,9 +129,11 @@ function AdminPayouts() {
     return (
       <div className="space-y-4">
         <PageTitle title="Payouts" subtitle="Release approved rewards and send money to members." />
-        <EmptyState title="Could not load payouts" body="Something went wrong while loading payout data.">
-          <Button onClick={() => void q.refetch()}>Try again</Button>
-        </EmptyState>
+        <EmptyState
+          title="Could not load payouts"
+          body="Something went wrong while loading payout data."
+          action={<Button onClick={() => void q.refetch()}>Try again</Button>}
+        />
       </div>
     );
   }
@@ -213,15 +215,28 @@ function AdminPayouts() {
                       onClick={() => {
                         const value = Number(amount);
                         const normalized = normalizeKenyanPhone(phone);
-                        if (!Number.isInteger(value) || value < 1) return toast.error("Enter a valid payout amount.");
-                        if (value > m.wallet.balance_kes) return toast.error("Amount is higher than the member's balance.");
-                        if (value < data.minWithdrawalKes) return toast.error(`Minimum payout is ${kes(data.minWithdrawalKes)}.`);
-                        if (!normalized) return toast.error("Enter a valid Kenyan M-Pesa number.");
+                        if (!Number.isInteger(value) || value < 1) {
+                          toast.error("Enter a valid payout amount.");
+                          return;
+                        }
+                        if (value > m.wallet.balance_kes) {
+                          toast.error("Amount is higher than the member's balance.");
+                          return;
+                        }
+                        if (value < data.minWithdrawalKes) {
+                          toast.error(`Minimum payout is ${kes(data.minWithdrawalKes)}.`);
+                          return;
+                        }
+                        if (!normalized) {
+                          toast.error("Enter a valid Kenyan M-Pesa number.");
+                          return;
+                        }
+                        const receipt = receipts[m.userId];
                         pay.mutate({
                           userId: m.userId,
                           amountKes: value,
                           phone: normalized,
-                          receipt: receipts[m.userId] || undefined,
+                          ...(receipt ? { receipt } : {}),
                         });
                       }}
                     >
