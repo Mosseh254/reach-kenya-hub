@@ -186,18 +186,29 @@ export const getOrder = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: order } = await context.supabase
-      .from("orders")
-      .select("*, package:packages(*), campaign:campaigns(title, advertiser:advertisers(name))")
-      .eq("id", data.orderId)
-      .maybeSingle();
+    const sel = "*, package:packages(*), campaign:campaigns(title, advertiser:advertisers(name))";
+    let { data: order } = await context.supabase.from("orders").select(sel).eq("id", data.orderId).maybeSingle();
     if (!order) throw new Error("NOT_FOUND");
+
+    // Live rail: IntaSend webhooks can be delayed or blocked, so the status page
+    // also asks IntaSend directly while the order is still pending.
+    if (order.status === "pending" && order.provider === "mpesa_intasend" && order.provider_ref) {
+      const { settleIntasendOrder } = await import("@/lib/payments/intasend-settle.server");
+      const outcome = await settleIntasendOrder(order.id, order.provider_ref, order.amount_kes);
+      if (outcome !== "pending") {
+        const refreshed = await context.supabase.from("orders").select(sel).eq("id", order.id).maybeSingle();
+        if (refreshed.data) order = refreshed.data;
+      }
+    }
+
     const { data: activation } = await context.supabase
       .from("activations")
       .select("id, expires_at")
       .eq("order_id", order.id)
       .maybeSingle();
-    return { order, activation, paymentMode: order.provider === "mpesa_mock" ? "mock" : "daraja" };
+    const paymentMode =
+      order.provider === "mpesa_mock" ? "mock" : order.provider === "mpesa_intasend" ? "intasend" : "daraja";
+    return { order, activation, paymentMode };
   });
 
 /** SANDBOX ONLY: resolves a pending mock order as paid or failed. */
