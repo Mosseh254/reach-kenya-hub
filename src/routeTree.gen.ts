@@ -39,6 +39,7 @@ import { Route as AuthenticatedBuyPackageIdRouteImport } from './routes/_authent
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders.index'
 import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders.$orderId'
 import { Route as ApiPublicHooksExpireActivationsRouteImport } from './routes/api/public/hooks/expire-activations'
+import { Route as ApiPublicIntasendWebhookRouteImport } from './routes/api/public/intasend/webhook'
 import { Route as ApiPublicMpesaCallbackRouteImport } from './routes/api/public/mpesa/callback'
 
 const IndexRoute = IndexRouteImport.update({
@@ -202,6 +203,12 @@ const ApiPublicHooksExpireActivationsRoute =
     path: '/api/public/hooks/expire-activations',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicIntasendWebhookRoute =
+  ApiPublicIntasendWebhookRouteImport.update({
+    id: '/api/public/intasend/webhook',
+    path: '/api/public/intasend/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMpesaCallbackRoute = ApiPublicMpesaCallbackRouteImport.update({
   id: '/api/public/mpesa/callback',
   path: '/api/public/mpesa/callback',
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/orders/': typeof AuthenticatedOrdersIndexRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
+  '/api/public/intasend/webhook': typeof ApiPublicIntasendWebhookRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -269,6 +277,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
+  '/api/public/intasend/webhook': typeof ApiPublicIntasendWebhookRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
 export interface FileRoutesById {
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/api/public/hooks/expire-activations': typeof ApiPublicHooksExpireActivationsRoute
+  '/api/public/intasend/webhook': typeof ApiPublicIntasendWebhookRoute
   '/api/public/mpesa/callback': typeof ApiPublicMpesaCallbackRoute
 }
 export interface FileRouteTypes {
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/orders/'
     | '/api/public/hooks/expire-activations'
+    | '/api/public/intasend/webhook'
     | '/api/public/mpesa/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -368,6 +379,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/orders'
     | '/api/public/hooks/expire-activations'
+    | '/api/public/intasend/webhook'
     | '/api/public/mpesa/callback'
   id:
     | '__root__'
@@ -401,6 +413,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/orders/'
     | '/api/public/hooks/expire-activations'
+    | '/api/public/intasend/webhook'
     | '/api/public/mpesa/callback'
   fileRoutesById: FileRoutesById
 }
@@ -415,6 +428,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   ApiPublicHooksExpireActivationsRoute: typeof ApiPublicHooksExpireActivationsRoute
+  ApiPublicIntasendWebhookRoute: typeof ApiPublicIntasendWebhookRoute
   ApiPublicMpesaCallbackRoute: typeof ApiPublicMpesaCallbackRoute
 }
 
@@ -630,6 +644,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksExpireActivationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/intasend/webhook': {
+      id: '/api/public/intasend/webhook'
+      path: '/api/public/intasend/webhook'
+      fullPath: '/api/public/intasend/webhook'
+      preLoaderRoute: typeof ApiPublicIntasendWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mpesa/callback': {
       id: '/api/public/mpesa/callback'
       path: '/api/public/mpesa/callback'
@@ -712,6 +733,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   ApiPublicHooksExpireActivationsRoute: ApiPublicHooksExpireActivationsRoute,
+  ApiPublicIntasendWebhookRoute: ApiPublicIntasendWebhookRoute,
   ApiPublicMpesaCallbackRoute: ApiPublicMpesaCallbackRoute,
 }
 export const routeTree = rootRouteImport

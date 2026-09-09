@@ -10,7 +10,7 @@
  * The adapter is chosen server-side only; the browser never sees credentials.
  */
 
-export type PaymentMode = "mock" | "daraja";
+export type PaymentMode = "mock" | "daraja" | "intasend";
 
 export interface StkPushInput {
   phone: string; // 2547XXXXXXXX
@@ -44,7 +44,41 @@ function darajaConfigured() {
 export function getPaymentMode(): PaymentMode {
   const forced = process.env["MPESA_MODE"];
   if (forced === "mock") return "mock";
+  if (forced === "daraja" && darajaConfigured()) return "daraja";
+  // IntaSend is the preferred live rail; Daraja stays supported as a fallback.
+  if (intasendConfiguredSync()) return "intasend";
   return darajaConfigured() ? "daraja" : "mock";
+}
+
+function intasendConfiguredSync() {
+  return Boolean(process.env["INTASEND_PUBLISHABLE_KEY"] && process.env["INTASEND_SECRET_KEY"]);
+}
+
+/** True when real money moves for new orders. */
+export function isLivePayments(): boolean {
+  const mode = getPaymentMode();
+  if (mode === "intasend") {
+    const pub = process.env["INTASEND_PUBLISHABLE_KEY"] ?? "";
+    return (process.env["INTASEND_ENV"] ?? (pub.includes("_live_") ? "live" : "test")) === "live";
+  }
+  return mode === "daraja" && process.env["MPESA_ENV"] === "production";
+}
+
+class IntasendAdapter implements MpesaAdapter {
+  readonly mode = "intasend" as const;
+  async stkPush(input: StkPushInput): Promise<StkPushResult> {
+    const { intasendStkPush } = await import("@/lib/payments/intasend.server");
+    const res = await intasendStkPush({
+      phone: input.phone,
+      amountKes: input.amountKes,
+      apiRef: input.accountReference,
+      narrative: input.description,
+    });
+    return {
+      checkoutRequestId: res.invoiceId,
+      customerMessage: "Check your phone and enter your M-Pesa PIN to complete the payment.",
+    };
+  }
 }
 
 class MockMpesaAdapter implements MpesaAdapter {
@@ -122,5 +156,7 @@ class DarajaMpesaAdapter implements MpesaAdapter {
 }
 
 export function getMpesaAdapter(): MpesaAdapter {
-  return getPaymentMode() === "daraja" ? new DarajaMpesaAdapter() : new MockMpesaAdapter();
+  const mode = getPaymentMode();
+  if (mode === "intasend") return new IntasendAdapter();
+  return mode === "daraja" ? new DarajaMpesaAdapter() : new MockMpesaAdapter();
 }
