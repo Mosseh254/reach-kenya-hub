@@ -36,12 +36,29 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+function toError(value: unknown): Error {
+  if (value instanceof Error) return value;
+  if (value == null) return new Error("Unknown error");
+  if (typeof value === "string") return new Error(value);
+  try {
+    return new Error(JSON.stringify(value));
+  } catch {
+    return new Error(String(value));
+  }
+}
+
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
+  const normalized = toError(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+    console.error(normalized);
+    try {
+      reportLovableError(normalized, { boundary: "tanstack_root_error_component" });
+    } catch {
+      // never let error reporting break the fallback UI
+    }
+  }, [normalized]);
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
