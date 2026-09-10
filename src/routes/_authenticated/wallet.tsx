@@ -170,10 +170,16 @@ function WalletPage() {
               {withdraw.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {withdraw.isPending ? "Sending request…" : "Request withdrawal"}
             </Button>
+            {balance < Math.max(min, 1) && (
+              <p className="text-sm text-muted-foreground">
+                You need at least {kes(min)} in your wallet before you can request a payout.
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               The final amount, your balance and eligibility are confirmed on our side. Requests are reviewed before any
               money is sent.
             </p>
+
           </form>
         </div>
 
