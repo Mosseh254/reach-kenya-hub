@@ -252,8 +252,22 @@ export const getAdminSettings = createServerFn({ method: "GET" })
       sa.from("app_settings").select("*").order("key"),
       sa.from("packages").select("*").order("sort_order"),
     ]);
-    const { getPaymentMode } = await import("@/lib/payments/mpesa.server");
-    return { settings: settings ?? [], packages: packages ?? [], paymentMode: getPaymentMode() };
+    const { getPaymentMode, isLivePayments } = await import("@/lib/payments/mpesa.server");
+    const pub = process.env["INTASEND_PUBLISHABLE_KEY"] ?? "";
+    const env = process.env["INTASEND_ENV"] ?? (pub.includes("_live_") ? "live" : "test");
+    const webhookUrl = `https://project--aeca5134-ae22-4469-a255-a0e34708cd88.lovable.app/api/public/intasend/webhook`;
+    return {
+      settings: settings ?? [],
+      packages: packages ?? [],
+      paymentMode: getPaymentMode(),
+      intasend: {
+        configured: Boolean(pub && process.env["INTASEND_SECRET_KEY"]),
+        live: isLivePayments(),
+        env,
+        hasChallenge: Boolean(process.env["INTASEND_WEBHOOK_CHALLENGE"]),
+        webhookUrl,
+      },
+    };
   });
 
 export const updateSettingAdmin = createServerFn({ method: "POST" })
