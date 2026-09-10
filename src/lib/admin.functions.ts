@@ -31,6 +31,9 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       weekPayouts,
       wallets,
       weekOrders,
+      activeOwners,
+      weekSubmitters,
+      weekEarners,
     ] = await Promise.all([
       count(sa.from("profiles").select("user_id", { count: "exact", head: true })),
       count(sa.from("submissions").select("id", { count: "exact", head: true }).eq("status", "pending")),
