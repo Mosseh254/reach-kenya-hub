@@ -89,14 +89,36 @@ export const getDashboard = createServerFn({ method: "GET" })
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(5),
+      supabase
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "approved")
+        .gte("reviewed_at", weekStart),
+      supabase
+        .from("wallet_transactions")
+        .select("type,amount_kes")
+        .eq("user_id", userId)
+        .gte("created_at", weekStart),
     ]);
+    const tx = weekTx.data ?? [];
+    const sum = (types: string[]) =>
+      tx.filter((t) => types.includes(t.type)).reduce((s, t) => s + Math.abs(t.amount_kes), 0);
+    const all = activations.data ?? [];
     return {
-      activations: activations.data ?? [],
+      activations: all,
       submissions: submissions.data ?? [],
       wallet: wallet.data,
       orders: orders.data ?? [],
       notifications: notifications.data ?? [],
       serverNow: new Date().toISOString(),
+      week: {
+        startsAt: weekStart,
+        activeCampaigns: all.filter((a) => a.status === "active").length,
+        approvedSubmissions: weekApproved.count ?? 0,
+        rewardsKes: sum(["reward", "referral_bonus"]),
+        paidOutKes: sum(["withdrawal_paid"]),
+      },
     };
   });
 
