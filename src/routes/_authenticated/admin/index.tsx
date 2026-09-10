@@ -114,6 +114,39 @@ function AdminOverview() {
         </div>
       </section>
 
+      <section className="mt-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg font-bold">Member activity this week</h2>
+          <p className="text-xs text-muted-foreground">Use the idle count to target engagement.</p>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Members with an open campaign"
+            value={d.engagement.membersWithOpenCampaign}
+            hint="Have an active package right now"
+            icon={<Megaphone className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Members who posted"
+            value={d.engagement.membersWhoSubmitted}
+            hint="Sent at least one screenshot this week"
+            icon={<Images className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Members who earned"
+            value={d.engagement.membersWhoEarned}
+            hint="Received a reward or bonus this week"
+            icon={<Wallet className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Idle members"
+            value={d.engagement.idleWithActivePackage}
+            hint="Active package but nothing sent this week"
+            icon={<AlertTriangle className="h-4 w-4" />}
+          />
+        </div>
+      </section>
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Members" value={d.users} icon={<Users className="h-4 w-4" />} />
         <StatCard label="Waiting for review" value={d.pendingSubmissions} icon={<Images className="h-4 w-4" />} />
