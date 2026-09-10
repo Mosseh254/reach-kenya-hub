@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeKenyanPhone } from "@/lib/format";
+import { nairobiWeekStartISO } from "@/lib/week";
 
 const SCREENSHOT_BUCKET = "screenshots";
 const ALLOWED_MIME: Record<string, string> = {
