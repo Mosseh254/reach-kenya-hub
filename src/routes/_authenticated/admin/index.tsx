@@ -40,6 +40,12 @@ type Overview = {
     payoutsKes: number;
     packageFeesKes: number;
   };
+  engagement: {
+    membersWithOpenCampaign: number;
+    membersWhoSubmitted: number;
+    membersWhoEarned: number;
+    idleWithActivePackage: number;
+  };
 };
 
 function AdminOverview() {
@@ -104,6 +110,39 @@ function AdminOverview() {
             value={kes(d.week.payoutsKes)}
             hint={`${kes(d.week.rewardsKes)} rewards credited · ${kes(d.week.packageFeesKes)} package fees`}
             icon={<Banknote className="h-4 w-4" />}
+          />
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg font-bold">Member activity this week</h2>
+          <p className="text-xs text-muted-foreground">Use the idle count to target engagement.</p>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Members with an open campaign"
+            value={d.engagement.membersWithOpenCampaign}
+            hint="Have an active package right now"
+            icon={<Megaphone className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Members who posted"
+            value={d.engagement.membersWhoSubmitted}
+            hint="Sent at least one screenshot this week"
+            icon={<Images className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Members who earned"
+            value={d.engagement.membersWhoEarned}
+            hint="Received a reward or bonus this week"
+            icon={<Wallet className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Idle members"
+            value={d.engagement.idleWithActivePackage}
+            hint="Active package but nothing sent this week"
+            icon={<AlertTriangle className="h-4 w-4" />}
           />
         </div>
       </section>

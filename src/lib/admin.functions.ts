@@ -31,6 +31,9 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       weekPayouts,
       wallets,
       weekOrders,
+      activeOwners,
+      weekSubmitters,
+      weekEarners,
     ] = await Promise.all([
       count(sa.from("profiles").select("user_id", { count: "exact", head: true })),
       count(sa.from("submissions").select("id", { count: "exact", head: true }).eq("status", "pending")),
@@ -55,8 +58,20 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       sa.from("withdrawals").select("amount_kes").eq("status", "paid").gte("processed_at", weekStart),
       sa.from("wallets").select("balance_kes,pending_kes"),
       sa.from("orders").select("amount_kes").eq("status", "paid").gte("paid_at", weekStart),
+      sa.from("activations").select("user_id").eq("status", "active"),
+      sa.from("submissions").select("user_id").gte("created_at", weekStart),
+      sa
+        .from("wallet_transactions")
+        .select("user_id")
+        .in("type", ["reward", "referral_bonus"])
+        .gte("created_at", weekStart),
     ]);
     const walletRows = wallets.data ?? [];
+    const activeOwnerIds = new Set((activeOwners.data ?? []).map((r) => r.user_id));
+    const submitterIds = new Set((weekSubmitters.data ?? []).map((r) => r.user_id));
+    const earnerIds = new Set((weekEarners.data ?? []).map((r) => r.user_id));
+    let idleWithActivePackage = 0;
+    for (const id of activeOwnerIds) if (!submitterIds.has(id)) idleWithActivePackage += 1;
     return {
       users,
       pendingSubmissions: pending,
@@ -75,6 +90,12 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         rewardsKes: (weekRewards.data ?? []).reduce((s, t) => s + t.amount_kes, 0),
         payoutsKes: (weekPayouts.data ?? []).reduce((s, w) => s + w.amount_kes, 0),
         packageFeesKes: (weekOrders.data ?? []).reduce((s, o) => s + o.amount_kes, 0),
+      },
+      engagement: {
+        membersWithOpenCampaign: activeOwnerIds.size,
+        membersWhoSubmitted: submitterIds.size,
+        membersWhoEarned: earnerIds.size,
+        idleWithActivePackage,
       },
     };
   });
