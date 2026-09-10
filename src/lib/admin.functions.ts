@@ -507,3 +507,191 @@ export const payMemberAdmin = createServerFn({ method: "POST" })
     if (payErr) throw new Error(payErr.message);
     return paid;
   });
+
+/* ---------------- Campaign content management ---------------- */
+
+const ASSET_BUCKET = "campaign-assets";
+const TEN_YEARS = 60 * 60 * 24 * 365 * 10;
+
+const uploadSchema = z.object({
+  base64: z.string().min(10),
+  mime: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  filename: z.string().max(120).optional(),
+});
+
+/** Uploads a campaign asset into private storage and returns a long-lived signed URL. */
+async function storeAsset(
+  sa: Awaited<ReturnType<typeof admin>>,
+  file: z.infer<typeof uploadSchema>,
+  folder: string,
+) {
+  const bytes = Buffer.from(file.base64, "base64");
+  if (bytes.byteLength > 8 * 1024 * 1024) throw new Error("Please use an image smaller than 8MB.");
+  const ext = file.mime === "image/png" ? "png" : file.mime === "image/webp" ? "webp" : "jpg";
+  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+  const up = await sa.storage.from(ASSET_BUCKET).upload(path, bytes, { contentType: file.mime, upsert: false });
+  if (up.error) throw new Error(up.error.message);
+  const signed = await sa.storage.from(ASSET_BUCKET).createSignedUrl(path, TEN_YEARS);
+  if (signed.error || !signed.data) throw new Error(signed.error?.message ?? "Could not prepare the image link.");
+  return signed.data.signedUrl;
+}
+
+/** Advertisers, campaigns and their materials for the admin content manager. */
+export const listCampaignContentAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+    const [{ data: advertisers }, { data: campaigns }, { data: activeCounts }] = await Promise.all([
+      sa.from("advertisers").select("*").order("created_at"),
+      sa
+        .from("campaigns")
+        .select("*, advertiser:advertisers(id, name), materials:campaign_materials(*)")
+        .order("created_at", { ascending: false }),
+      sa.from("activations").select("campaign_id").eq("status", "active"),
+    ]);
+    const used = new Map<string, number>();
+    for (const a of activeCounts ?? []) used.set(a.campaign_id, (used.get(a.campaign_id) ?? 0) + 1);
+    return {
+      advertisers: advertisers ?? [],
+      campaigns: (campaigns ?? []).map((c) => ({
+        ...c,
+        materials: [...(c.materials ?? [])].sort((a, b) => a.sort_order - b.sort_order),
+        activeMembers: used.get(c.id) ?? 0,
+      })),
+    };
+  });
+
+export const upsertAdvertiserAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        name: z.string().min(2).max(60),
+        website_url: z.string().url().max(300),
+        tagline: z.string().max(160).default(""),
+        is_active: z.boolean().default(true),
+        logo: uploadSchema.optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+    const { id, logo, ...rest } = data;
+    const patch: Record<string, unknown> = { ...rest };
+    if (logo) patch["logo_url"] = await storeAsset(sa, logo, "advertisers");
+    const { data: row, error } = id
+      ? await sa.from("advertisers").update(patch as never).eq("id", id).select("*").single()
+      : await sa.from("advertisers").insert(patch as never).select("*").single();
+    if (error) throw new Error(error.message);
+    await sa.rpc("log_audit", {
+      p_actor: context.userId,
+      p_actor_type: "admin",
+      p_action: id ? "advertiser.updated" : "advertiser.created",
+      p_entity_type: "advertiser",
+      p_entity_id: row.id,
+      p_meta: { name: data.name } as never,
+    });
+    return row;
+  });
+
+export const upsertCampaignAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        advertiser_id: z.string().uuid(),
+        title: z.string().min(3).max(90),
+        brief: z.string().max(1200).default(""),
+        cta_url: z.string().url().max(300),
+        is_active: z.boolean().default(true),
+        cover: uploadSchema.optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+    const { id, cover, ...rest } = data;
+    const patch: Record<string, unknown> = { ...rest };
+    if (cover) patch["cover_url"] = await storeAsset(sa, cover, "campaigns");
+    const { data: row, error } = id
+      ? await sa.from("campaigns").update(patch as never).eq("id", id).select("*").single()
+      : await sa.from("campaigns").insert(patch as never).select("*").single();
+    if (error) throw new Error(error.message);
+    await sa.rpc("log_audit", {
+      p_actor: context.userId,
+      p_actor_type: "admin",
+      p_action: id ? "campaign.updated" : "campaign.created",
+      p_entity_type: "campaign",
+      p_entity_id: row.id,
+      p_meta: { title: data.title, is_active: data.is_active } as never,
+    });
+    return row;
+  });
+
+/** Adds or updates one campaign material: an image to post, or a ready-made caption. */
+export const saveMaterialAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        campaign_id: z.string().uuid(),
+        kind: z.enum(["image", "caption"]),
+        title: z.string().min(2).max(90),
+        caption_text: z.string().max(600).optional(),
+        sort_order: z.number().int().min(0).max(99).default(0),
+        file: uploadSchema.optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    if (data.kind === "image" && !data.file && !data.id) throw new Error("Please choose an image to upload.");
+    if (data.kind === "caption" && !data.caption_text?.trim()) throw new Error("Please write the caption text.");
+    const sa = await admin();
+    const patch: Record<string, unknown> = {
+      campaign_id: data.campaign_id,
+      kind: data.kind,
+      title: data.title,
+      sort_order: data.sort_order,
+      caption_text: data.kind === "caption" ? data.caption_text : (data.caption_text ?? null),
+    };
+    if (data.file) patch["asset_url"] = await storeAsset(sa, data.file, `campaigns/${data.campaign_id}`);
+    const { data: row, error } = data.id
+      ? await sa.from("campaign_materials").update(patch as never).eq("id", data.id).select("*").single()
+      : await sa.from("campaign_materials").insert(patch as never).select("*").single();
+    if (error) throw new Error(error.message);
+    await sa.rpc("log_audit", {
+      p_actor: context.userId,
+      p_actor_type: "admin",
+      p_action: data.id ? "material.updated" : "material.created",
+      p_entity_type: "campaign_material",
+      p_entity_id: row.id,
+      p_meta: { campaign_id: data.campaign_id, kind: data.kind } as never,
+    });
+    return row;
+  });
+
+export const deleteMaterialAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+    const { error } = await sa.from("campaign_materials").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await sa.rpc("log_audit", {
+      p_actor: context.userId,
+      p_actor_type: "admin",
+      p_action: "material.deleted",
+      p_entity_type: "campaign_material",
+      p_entity_id: data.id,
+      p_meta: {} as never,
+    });
+    return { ok: true };
+  });
