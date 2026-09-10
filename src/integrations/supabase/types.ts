@@ -797,6 +797,7 @@ export type Database = {
         Returns: number
       }
       relay_http_result: { Args: { p_request_id: number }; Returns: Json }
+      release_approved_rewards: { Args: never; Returns: number }
       request_withdrawal: {
         Args: { p_amount: number; p_phone: string; p_user_id: string }
         Returns: {
