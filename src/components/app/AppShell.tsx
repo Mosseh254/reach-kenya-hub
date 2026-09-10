@@ -38,6 +38,7 @@ const userNav = [
 const adminNav = [
   { to: "/admin", label: "Admin overview" },
   { to: "/admin/submissions", label: "Review queue" },
+  { to: "/admin/campaigns", label: "Campaign content" },
   { to: "/admin/withdrawals", label: "Withdrawals" },
   { to: "/admin/payouts", label: "Payouts" },
   { to: "/admin/users", label: "Users" },
