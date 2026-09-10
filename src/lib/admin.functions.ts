@@ -39,7 +39,23 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       sa.from("orders").select("amount_kes").eq("status", "paid"),
       sa.from("wallet_transactions").select("amount_kes").in("type", ["reward", "referral_bonus"]),
       sa.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(12),
+      count(
+        sa
+          .from("submissions")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "approved")
+          .gte("reviewed_at", weekStart),
+      ),
+      sa
+        .from("wallet_transactions")
+        .select("amount_kes")
+        .in("type", ["reward", "referral_bonus"])
+        .gte("created_at", weekStart),
+      sa.from("withdrawals").select("amount_kes").eq("status", "paid").gte("processed_at", weekStart),
+      sa.from("wallets").select("balance_kes,pending_kes"),
+      sa.from("orders").select("amount_kes").eq("status", "paid").gte("paid_at", weekStart),
     ]);
+    const walletRows = wallets.data ?? [];
     return {
       users,
       pendingSubmissions: pending,
@@ -49,6 +65,16 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       packageRevenueKes: (paidOrders.data ?? []).reduce((s, o) => s + o.amount_kes, 0),
       rewardsCreditedKes: (rewards.data ?? []).reduce((s, t) => s + t.amount_kes, 0),
       recentAudit: audit.data ?? [],
+      walletBalancesKes: walletRows.reduce((s, w) => s + w.balance_kes, 0),
+      walletPendingKes: walletRows.reduce((s, w) => s + w.pending_kes, 0),
+      week: {
+        startsAt: weekStart,
+        activeCampaigns: activeActivations,
+        approvedSubmissions: weekApproved,
+        rewardsKes: (weekRewards.data ?? []).reduce((s, t) => s + t.amount_kes, 0),
+        payoutsKes: (weekPayouts.data ?? []).reduce((s, w) => s + w.amount_kes, 0),
+        packageFeesKes: (weekOrders.data ?? []).reduce((s, o) => s + o.amount_kes, 0),
+      },
     };
   });
 
