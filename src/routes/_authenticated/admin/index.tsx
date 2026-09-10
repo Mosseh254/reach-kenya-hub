@@ -4,7 +4,8 @@ import { AlertTriangle, Banknote, Images, Megaphone, Users, Wallet } from "lucid
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTitle, StatCard } from "@/components/site/Bits";
-import { fmtDate, kes } from "@/lib/format";
+import { fmtDate, fmtTime, kes } from "@/lib/format";
+import { weekLabel } from "@/lib/week";
 import { getAdminOverview } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
