@@ -237,7 +237,7 @@ function ActivationSummary({ activation, now }: { activation: Activation; now: n
         </div>
         <Progress value={pct} className="mt-2" />
         <p className="mt-2 text-xs text-muted-foreground">
-          {kes(pkg.reward_per_post_kes ?? 0)} per approved post · up to {pkg.max_posts_per_day ?? 1} post a day · ends{" "}
+          {kes(pkg.reward_per_post_kes ?? 0)} per View · ends{" "}
           {fmtDate(activation.expires_at, true)} (server time)
         </p>
       </div>
