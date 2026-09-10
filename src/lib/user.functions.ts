@@ -63,7 +63,8 @@ export const getDashboard = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const sa = await admin();
     await sa.rpc("expire_activations"); // server-timed expiry sweep
-    const [activations, submissions, wallet, orders, notifications] = await Promise.all([
+    const weekStart = nairobiWeekStartISO();
+    const [activations, submissions, wallet, orders, notifications, weekApproved, weekTx] = await Promise.all([
       supabase
         .from("activations")
         .select("*, package:packages(*), campaign:campaigns(*, advertiser:advertisers(*))")
