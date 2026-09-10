@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 export const meQuery = { queryKey: ["me"], queryFn: () => getMe() };
 
 const userNav = [
-  { to: "/dashboard", label: "Overview", icon: Home },
+  { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/campaigns", label: "My campaigns", icon: Megaphone },
   { to: "/submissions", label: "Submissions", icon: Images },
   { to: "/wallet", label: "Wallet", icon: Wallet },

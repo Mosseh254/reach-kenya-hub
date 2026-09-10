@@ -21,10 +21,10 @@ import { getDashboard } from "@/lib/user.functions";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Your overview — StatusReach Kenya" },
+      { title: "Your dashboard — StatusReach Kenya" },
       { name: "description", content: "Track your active package, campaign posts, verified rewards and wallet balance." },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Your overview — StatusReach Kenya" },
+      { property: "og:title", content: "Your dashboard — StatusReach Kenya" },
       { property: "og:description", content: "Track your active package, campaign posts and rewards." },
     ],
   }),
@@ -50,7 +50,7 @@ function DashboardPage() {
   if (isLoading) {
     return (
       <div className="space-y-4" aria-busy="true" aria-live="polite">
-        <span className="sr-only">Loading your overview…</span>
+        <span className="sr-only">Loading your dashboard…</span>
         <Skeleton className="h-9 w-56" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
@@ -65,7 +65,7 @@ function DashboardPage() {
   if (isError || !data) {
     return (
       <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
-        <h2 className="font-semibold">We could not load your overview</h2>
+        <h2 className="font-semibold">We could not load your dashboard</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {error instanceof Error ? error.message : "Please check your connection and try again."}
         </p>
@@ -85,7 +85,7 @@ function DashboardPage() {
   return (
     <>
       <PageTitle
-        title="Your overview"
+        title="Your dashboard"
         subtitle="Everything about your package, posts and rewards in one place."
         actions={
           <Button asChild>
