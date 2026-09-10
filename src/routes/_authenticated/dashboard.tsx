@@ -14,7 +14,8 @@ import { EmptyState, PageTitle, StatCard, StatusBadge } from "@/components/site/
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtDate, kes, timeLeft } from "@/lib/format";
+import { fmtDate, fmtTime, kes, timeLeft } from "@/lib/format";
+import { weekLabel } from "@/lib/week";
 import { getDashboard } from "@/lib/user.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
