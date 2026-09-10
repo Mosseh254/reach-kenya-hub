@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save } from "lucide-react";
+import { Check, Copy, Plus, Save, ShieldCheck, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageTitle, SandboxBanner } from "@/components/site/Bits";
 import { kes } from "@/lib/format";
 import { getAdminSettings, updateSettingAdmin, upsertPackageAdmin } from "@/lib/admin.functions";
+
+type IntasendConfig = {
+  configured: boolean;
+  live: boolean;
+  env: string;
+  hasChallenge: boolean;
+  webhookUrl: string;
+};
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   head: () => ({
@@ -145,6 +153,8 @@ function AdminSettings() {
       <div className="mb-6">
         <SandboxBanner mode={q.data.paymentMode} />
       </div>
+
+      {q.data.intasend && <IntasendSetupPanel config={q.data.intasend} />}
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-bold">Package tiers</h2>
@@ -311,6 +321,87 @@ function Field({ label, id, children }: { label: string; id: string; children: R
     <div>
       <Label htmlFor={id}>{label}</Label>
       <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
+function IntasendSetupPanel({ config }: { config: IntasendConfig }) {
+  const [copied, setCopied] = useState(false);
+  const allGood = config.configured && config.hasChallenge;
+
+  function copyUrl() {
+    void navigator.clipboard.writeText(config.webhookUrl).then(() => {
+      setCopied(true);
+      toast.success("Webhook URL copied");
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <section className="mb-8 rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="font-display text-lg font-bold">IntaSend live payments</h2>
+        {allGood ? (
+          <Badge variant="outline" className="border-success/30 bg-success/15 text-success">
+            <ShieldCheck className="mr-1 h-3.5 w-3.5" /> {config.live ? "Live keys" : "Test keys"} · Challenge set
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
+            <ShieldAlert className="mr-1 h-3.5 w-3.5" /> Incomplete
+          </Badge>
+        )}
+      </div>
+
+      <p className="mt-2 text-sm text-muted-foreground">
+        Copy this webhook URL into your IntaSend dashboard under <strong>Webhooks</strong>, then enter the same
+        challenge word you saved here. IntaSend sends that challenge with every payment event so your server can
+        verify the callback is genuine.
+      </p>
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <code className="flex-1 truncate rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+          {config.webhookUrl}
+        </code>
+        <Button variant="outline" onClick={copyUrl} className="shrink-0">
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} Copy URL
+        </Button>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <ConfigRow label="Publishable + secret keys" ok={config.configured} />
+        <ConfigRow label="Webhook challenge word" ok={config.hasChallenge} />
+        <ConfigRow label={`Environment: ${config.env}`} ok={config.live} okLabel="real money" badLabel="test" />
+      </div>
+
+      <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+        <li>
+          Go to the IntaSend dashboard → <strong>Webhooks</strong> → add a new endpoint.
+        </li>
+        <li>
+          Paste the webhook URL above as the destination URL (must be HTTPS).
+        </li>
+        <li>
+          Set the challenge word to the <em>same value</em> you saved as{" "}
+          <code className="rounded bg-muted px-1">INTASEND_WEBHOOK_CHALLENGE</code> in your secrets.
+        </li>
+        <li>Save. Real M-Pesa STK prompts and automatic order confirmation will then work.</li>
+      </ol>
+    </section>
+  );
+}
+
+function ConfigRow({ label, ok, okLabel = "set", badLabel = "missing" }: { label: string; ok: boolean; okLabel?: string; badLabel?: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+      {ok ? (
+        <ShieldCheck className="h-4 w-4 text-success" />
+      ) : (
+        <ShieldAlert className="h-4 w-4 text-destructive" />
+      )}
+      <span className="text-foreground">{label}</span>
+      <Badge variant="outline" className={ok ? "border-success/30 bg-success/15 text-success" : "border-destructive/30 bg-destructive/10 text-destructive"}>
+        {ok ? okLabel : badLabel}
+      </Badge>
     </div>
   );
 }
