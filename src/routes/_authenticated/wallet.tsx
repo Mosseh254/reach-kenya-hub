@@ -142,7 +142,20 @@ function WalletPage() {
               />
               {tooSmall && <p className="text-sm text-destructive">The minimum withdrawal is {kes(min)}.</p>}
               {tooBig && <p className="text-sm text-destructive">You only have {kes(balance)} available.</p>}
+              {balance >= Math.max(min, 1) && (
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                  onClick={() => {
+                    setAmount(String(balance));
+                    setTouched(true);
+                  }}
+                >
+                  Withdraw full balance ({kes(balance)})
+                </button>
+              )}
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="phone">M-Pesa number</Label>
               <Input
