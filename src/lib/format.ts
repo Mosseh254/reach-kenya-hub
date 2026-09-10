@@ -15,6 +15,16 @@ export function fmtDate(value: string | Date | null | undefined, withTime = fals
   });
 }
 
+export function fmtTime(value: number | string | Date | null | undefined) {
+  if (!value) return "—";
+  const d = value instanceof Date ? value : new Date(value);
+  return d.toLocaleTimeString("en-KE", {
+    timeZone: "Africa/Nairobi",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function timeLeft(expiresAt: string, now = Date.now()) {
   const ms = new Date(expiresAt).getTime() - now;
   if (ms <= 0) return "Expired";

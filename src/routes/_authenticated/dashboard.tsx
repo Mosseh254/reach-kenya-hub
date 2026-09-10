@@ -14,7 +14,8 @@ import { EmptyState, PageTitle, StatCard, StatusBadge } from "@/components/site/
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtDate, kes, timeLeft } from "@/lib/format";
+import { fmtDate, fmtTime, kes, timeLeft } from "@/lib/format";
+import { weekLabel } from "@/lib/week";
 import { getDashboard } from "@/lib/user.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -39,9 +40,11 @@ const journey = [
 ];
 
 function DashboardPage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
@@ -116,6 +119,24 @@ function DashboardPage() {
         <StatCard label="Approved posts" value={approved} hint={`${pendingReview} awaiting review`} icon={<BadgeCheck className="h-4 w-4" />} />
         <StatCard label="Lifetime earned" value={kes(data.wallet?.lifetime_earned_kes ?? 0)} hint="From verified posts only" />
       </div>
+
+      {data.week && (
+        <section className="mt-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-bold">This week</h2>
+            <p className="text-xs text-muted-foreground">
+              {weekLabel(data.week.startsAt)} · updates every 30 seconds · last checked {fmtTime(dataUpdatedAt)}
+            </p>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Active campaigns" value={data.week.activeCampaigns} icon={<Megaphone className="h-4 w-4" />} />
+            <StatCard label="Approved this week" value={data.week.approvedSubmissions} icon={<BadgeCheck className="h-4 w-4" />} />
+            <StatCard label="Rewards this week" value={kes(data.week.rewardsKes)} icon={<Wallet className="h-4 w-4" />} />
+            <StatCard label="Paid out this week" value={kes(data.week.paidOutKes)} hint="M-Pesa withdrawals sent" />
+          </div>
+        </section>
+      )}
+
 
       <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">

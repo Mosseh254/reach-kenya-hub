@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeKenyanPhone } from "@/lib/format";
+import { nairobiWeekStartISO } from "@/lib/week";
 
 const SCREENSHOT_BUCKET = "screenshots";
 const ALLOWED_MIME: Record<string, string> = {
@@ -63,7 +64,8 @@ export const getDashboard = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const sa = await admin();
     await sa.rpc("expire_activations"); // server-timed expiry sweep
-    const [activations, submissions, wallet, orders, notifications] = await Promise.all([
+    const weekStart = nairobiWeekStartISO();
+    const [activations, submissions, wallet, orders, notifications, weekApproved, weekTx] = await Promise.all([
       supabase
         .from("activations")
         .select("*, package:packages(*), campaign:campaigns(*, advertiser:advertisers(*))")
@@ -88,14 +90,36 @@ export const getDashboard = createServerFn({ method: "GET" })
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(5),
+      supabase
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "approved")
+        .gte("reviewed_at", weekStart),
+      supabase
+        .from("wallet_transactions")
+        .select("type,amount_kes")
+        .eq("user_id", userId)
+        .gte("created_at", weekStart),
     ]);
+    const tx = weekTx.data ?? [];
+    const sum = (types: string[]) =>
+      tx.filter((t) => types.includes(t.type)).reduce((s, t) => s + Math.abs(t.amount_kes), 0);
+    const all = activations.data ?? [];
     return {
-      activations: activations.data ?? [],
+      activations: all,
       submissions: submissions.data ?? [],
       wallet: wallet.data,
       orders: orders.data ?? [],
       notifications: notifications.data ?? [],
       serverNow: new Date().toISOString(),
+      week: {
+        startsAt: weekStart,
+        activeCampaigns: all.filter((a) => a.status === "active").length,
+        approvedSubmissions: weekApproved.count ?? 0,
+        rewardsKes: sum(["reward", "referral_bonus"]),
+        paidOutKes: sum(["withdrawal_paid"]),
+      },
     };
   });
 
