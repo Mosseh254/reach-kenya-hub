@@ -15,7 +15,22 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     const sa = await admin();
     await sa.rpc("expire_activations");
     const count = (q: PromiseLike<{ count: number | null }>) => q.then((r) => r.count ?? 0);
-    const [users, pending, flagged, withdrawals, activeActivations, paidOrders, rewards, audit] = await Promise.all([
+    const weekStart = nairobiWeekStartISO();
+    const [
+      users,
+      pending,
+      flagged,
+      withdrawals,
+      activeActivations,
+      paidOrders,
+      rewards,
+      audit,
+      weekApproved,
+      weekRewards,
+      weekPayouts,
+      wallets,
+      weekOrders,
+    ] = await Promise.all([
       count(sa.from("profiles").select("user_id", { count: "exact", head: true })),
       count(sa.from("submissions").select("id", { count: "exact", head: true }).eq("status", "pending")),
       count(sa.from("submissions").select("id", { count: "exact", head: true }).eq("status", "flagged")),
