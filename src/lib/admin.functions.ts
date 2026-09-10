@@ -91,6 +91,12 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         payoutsKes: (weekPayouts.data ?? []).reduce((s, w) => s + w.amount_kes, 0),
         packageFeesKes: (weekOrders.data ?? []).reduce((s, o) => s + o.amount_kes, 0),
       },
+      engagement: {
+        membersWithOpenCampaign: activeOwnerIds.size,
+        membersWhoSubmitted: submitterIds.size,
+        membersWhoEarned: earnerIds.size,
+        idleWithActivePackage,
+      },
     };
   });
 
