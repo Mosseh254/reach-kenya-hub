@@ -81,7 +81,7 @@ function Landing() {
           </div>
           {campaign && (
             <div className="self-center rounded-3xl border border-ink-foreground/10 bg-ink-foreground/5 p-5 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Live demo campaign</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">LIVE CAMPAIGN</p>
               <div className="mt-3 flex items-center gap-3">
                 {campaign.advertiser?.logo_url && <img src={campaign.advertiser.logo_url} alt="" className="h-10 w-10 rounded-lg bg-white object-contain p-1" />}
                 <div>
