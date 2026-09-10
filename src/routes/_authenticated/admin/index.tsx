@@ -40,6 +40,12 @@ type Overview = {
     payoutsKes: number;
     packageFeesKes: number;
   };
+  engagement: {
+    membersWithOpenCampaign: number;
+    membersWhoSubmitted: number;
+    membersWhoEarned: number;
+    idleWithActivePackage: number;
+  };
 };
 
 function AdminOverview() {
