@@ -154,6 +154,8 @@ function AdminSettings() {
         <SandboxBanner mode={q.data.paymentMode} />
       </div>
 
+      {q.data.intasend && <IntasendSetupPanel config={q.data.intasend} />}
+
       <section className="space-y-4">
         <h2 className="font-display text-lg font-bold">Package tiers</h2>
         {creating && <PackageEditor initial={blank} onSave={(v) => savePackage.mutate(v)} saving={savePackage.isPending} />}
