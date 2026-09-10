@@ -13,6 +13,14 @@ import { PageTitle, SandboxBanner } from "@/components/site/Bits";
 import { kes } from "@/lib/format";
 import { getAdminSettings, updateSettingAdmin, upsertPackageAdmin } from "@/lib/admin.functions";
 
+type IntasendConfig = {
+  configured: boolean;
+  live: boolean;
+  env: string;
+  hasChallenge: boolean;
+  webhookUrl: string;
+};
+
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   head: () => ({
     meta: [
