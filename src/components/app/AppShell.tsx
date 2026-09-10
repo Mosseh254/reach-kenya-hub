@@ -36,7 +36,7 @@ const userNav = [
 ] as const;
 
 const adminNav = [
-  { to: "/admin", label: "Admin overview" },
+  { to: "/admin", label: "Admin dashboard" },
   { to: "/admin/submissions", label: "Review queue" },
   { to: "/admin/campaigns", label: "Campaign content" },
   { to: "/admin/withdrawals", label: "Withdrawals" },
