@@ -39,9 +39,11 @@ const journey = [
 ];
 
 function DashboardPage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
