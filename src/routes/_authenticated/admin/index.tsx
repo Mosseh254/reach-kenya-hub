@@ -29,10 +29,26 @@ type Overview = {
   packageRevenueKes: number;
   rewardsCreditedKes: number;
   recentAudit: { id: string; action: string; entity_type: string | null; created_at: string }[];
+  walletBalancesKes: number;
+  walletPendingKes: number;
+  week: {
+    startsAt: string;
+    activeCampaigns: number;
+    approvedSubmissions: number;
+    rewardsKes: number;
+    payoutsKes: number;
+    packageFeesKes: number;
+  };
 };
 
 function AdminOverview() {
-  const q = useQuery({ queryKey: ["admin-overview"], queryFn: () => getAdminOverview() });
+  const q = useQuery({
+    queryKey: ["admin-overview"],
+    queryFn: () => getAdminOverview(),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
+
 
   if (q.isLoading) {
     return (
