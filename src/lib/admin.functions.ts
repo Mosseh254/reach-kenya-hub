@@ -695,3 +695,63 @@ export const deleteMaterialAdmin = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/**
+ * Manual fallback for orders the IntaSend webhook never resolved.
+ * Uses the same database routines as the webhook, so it stays idempotent:
+ * an order already paid or already failed is left untouched.
+ */
+export const resolveOrderAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        decision: z.enum(["approve", "cancel"]),
+        receipt: z.string().trim().max(40).optional(),
+        note: z.string().trim().max(300).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const sa = await admin();
+
+    const { data: order, error: readErr } = await sa
+      .from("orders")
+      .select("id, status, provider_ref")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!order) throw new Error("ORDER_NOT_FOUND");
+    if (order.status !== "pending") throw new Error("ORDER_ALREADY_RESOLVED");
+
+    if (data.decision === "approve") {
+      const { error } = await sa.rpc("confirm_order_paid", {
+        p_order_id: data.id,
+        p_provider_ref: order.provider_ref ?? "manual-admin",
+        p_receipt: data.receipt && data.receipt.length > 0 ? data.receipt : "MANUAL-ADMIN",
+        p_payload: { source: "admin_manual", admin_id: context.userId, note: data.note ?? "" } as never,
+      });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await sa.rpc("fail_order", {
+        p_order_id: data.id,
+        p_reason: data.note && data.note.length > 0 ? data.note : "Cancelled by admin",
+        p_payload: { source: "admin_manual", admin_id: context.userId } as never,
+      });
+      if (error) throw new Error(error.message);
+    }
+
+    await sa.rpc("log_audit", {
+      p_actor: context.userId,
+      p_actor_type: "admin",
+      p_action: data.decision === "approve" ? "order.manually_approved" : "order.manually_cancelled",
+      p_entity_type: "order",
+      p_entity_id: data.id,
+      p_meta: { receipt: data.receipt ?? null, note: data.note ?? null } as never,
+    });
+
+    return { ok: true };
+  });
+
