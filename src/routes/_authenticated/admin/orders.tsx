@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, PageTitle, StatusBadge } from "@/components/site/Bits";
 import { fmtDate, kes } from "@/lib/format";
-import { listOrdersAdmin } from "@/lib/admin.functions";
+import { listOrdersAdmin, resolveOrderAdmin } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({
   head: () => ({
@@ -33,9 +37,47 @@ type Row = {
   user: { full_name: string | null; email: string | null } | null;
 };
 
+const FRIENDLY: Record<string, string> = {
+  ORDER_NOT_FOUND: "That order could not be found.",
+  ORDER_ALREADY_RESOLVED: "This order was already completed or cancelled — nothing to do.",
+};
+
+function friendly(message: string) {
+  for (const key of Object.keys(FRIENDLY)) if (message.includes(key)) return FRIENDLY[key];
+  return message;
+}
+
 function AdminOrders() {
+  const qc = useQueryClient();
   const q = useQuery({ queryKey: ["admin-orders"], queryFn: () => listOrdersAdmin() });
   const rows = (q.data ?? []) as Row[];
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const resolve = useMutation({
+    mutationFn: (v: { id: string; decision: "approve" | "cancel" }) =>
+      resolveOrderAdmin({
+        data: {
+          id: v.id,
+          decision: v.decision,
+          receipt: v.decision === "approve" ? receipt.trim() || undefined : undefined,
+          note: note.trim() || undefined,
+        },
+      }),
+    onMutate: (v) => setBusy(v.id + v.decision),
+    onSettled: () => setBusy(null),
+    onSuccess: (_r, v) => {
+      toast.success(v.decision === "approve" ? "Order marked as paid and the campaign was activated." : "Order cancelled.");
+      setOpenId(null);
+      setReceipt("");
+      setNote("");
+      void qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      void qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: (e) => toast.error(friendly(e instanceof Error ? e.message : "Action failed")),
+  });
 
   if (q.isLoading) {
     return (
@@ -60,12 +102,15 @@ function AdminOrders() {
 
   return (
     <>
-      <PageTitle title="Orders" subtitle="Every package purchase, its payment state and receipt." />
+      <PageTitle
+        title="Orders"
+        subtitle="Every package purchase, its payment state and receipt. Payments confirm automatically — only use the actions below when a payment was received but the order is still waiting."
+      />
       {rows.length === 0 ? (
         <EmptyState title="No orders yet" body="Purchases will appear here as soon as members check out." />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[860px] text-sm">
             <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Member</th>
@@ -75,6 +120,7 @@ function AdminOrders() {
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3">Receipt</th>
+                <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -93,6 +139,60 @@ function AdminOrders() {
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{fmtDate(o.created_at, true)}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{o.mpesa_receipt ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {o.status !== "pending" ? (
+                      <span className="text-xs text-muted-foreground">No action needed</span>
+                    ) : openId === o.id ? (
+                      <div className="min-w-[240px] space-y-2">
+                        <Input
+                          aria-label="M-Pesa receipt (optional)"
+                          placeholder="M-Pesa receipt (optional)"
+                          value={receipt}
+                          onChange={(e) => setReceipt(e.target.value)}
+                        />
+                        <Input
+                          aria-label="Note (optional)"
+                          placeholder="Note (optional)"
+                          value={note}
+                          onChange={(e) => setNote(e.target.value)}
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            disabled={resolve.isPending}
+                            onClick={() => resolve.mutate({ id: o.id, decision: "approve" })}
+                          >
+                            {busy === o.id + "approve" && <Loader2 className="h-4 w-4 animate-spin" />}
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={resolve.isPending}
+                            onClick={() => resolve.mutate({ id: o.id, decision: "cancel" })}
+                          >
+                            {busy === o.id + "cancel" && <Loader2 className="h-4 w-4 animate-spin" />}
+                            Cancel
+                          </Button>
+                          <Button size="sm" variant="ghost" disabled={resolve.isPending} onClick={() => setOpenId(null)}>
+                            Close
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setOpenId(o.id);
+                          setReceipt("");
+                          setNote("");
+                        }}
+                      >
+                        Resolve
+                      </Button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
