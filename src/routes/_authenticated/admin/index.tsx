@@ -11,11 +11,11 @@ import { getAdminOverview } from "@/lib/admin.functions";
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
     meta: [
-      { title: "Admin overview — StatusReach Kenya" },
-      { name: "description", content: "Operations overview for reviews, payouts and campaigns." },
+      { title: "Admin dashboard — StatusReach Kenya" },
+      { name: "description", content: "Operations dashboard for reviews, payouts and campaigns." },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Admin overview — StatusReach Kenya" },
-      { property: "og:description", content: "Operations overview for reviews and payouts." },
+      { property: "og:title", content: "Admin dashboard — StatusReach Kenya" },
+      { property: "og:description", content: "Operations dashboard for reviews and payouts." },
     ],
   }),
   component: AdminOverview,
@@ -60,7 +60,7 @@ function AdminOverview() {
   if (q.isLoading) {
     return (
       <div className="space-y-4" aria-busy="true" aria-live="polite">
-        <span className="sr-only">Loading admin overview…</span>
+        <span className="sr-only">Loading admin dashboard…</span>
         <Skeleton className="h-9 w-56" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
@@ -74,7 +74,7 @@ function AdminOverview() {
   if (q.isError) {
     return (
       <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
-        <h2 className="font-semibold">We could not load the overview</h2>
+        <h2 className="font-semibold">We could not load the dashboard</h2>
         <p className="mt-1 text-sm text-muted-foreground">Please check your connection and try again.</p>
         <Button className="mt-4" onClick={() => void q.refetch()}>
           Try again
@@ -87,7 +87,7 @@ function AdminOverview() {
 
   return (
     <>
-      <PageTitle title="Admin overview" subtitle="Reviews, payouts and campaign operations at a glance." />
+      <PageTitle title="Admin dashboard" subtitle="Reviews, payouts and campaign operations at a glance." />
 
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
