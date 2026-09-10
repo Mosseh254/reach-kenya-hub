@@ -792,6 +792,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      relay_http_post: {
+        Args: { p_body: Json; p_headers: Json; p_url: string }
+        Returns: number
+      }
+      relay_http_result: { Args: { p_request_id: number }; Returns: Json }
       request_withdrawal: {
         Args: { p_amount: number; p_phone: string; p_user_id: string }
         Returns: {
