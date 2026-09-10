@@ -113,25 +113,30 @@ async function relay<T>(path: string, body: Record<string, unknown>): Promise<T>
 
 async function call<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const { baseUrl } = keys();
+  // Try the direct call once. Anything that looks like a network/WAF block is
+  // retried through the database relay exactly once, never a real API answer,
+  // so a payment prompt can never be sent twice.
+  let direct: { status: number; text: string } | null = null;
   try {
     const res = await fetch(`${baseUrl}${path}`, {
       method: "POST",
       headers: headersFor(),
       body: JSON.stringify(body),
     });
-    const text = await res.text();
-    // The WAF block ("error code: 1106") is not a real API answer — relay instead.
-    if (res.status === 403 && text.includes("1106")) return await relay<T>(path, body);
-    const json = parse(text);
-    if (!res.ok) fail(res.status, json);
-    return json as T;
-  } catch (e) {
-    if (e instanceof Error && !/IntaSend|payment provider|amount|phone/i.test(e.message)) {
-      return await relay<T>(path, body);
-    }
-    throw e;
+    direct = { status: res.status, text: await res.text() };
+  } catch {
+    direct = null;
   }
+
+  if (direct && !(direct.status === 403 && direct.text.includes("1106"))) {
+    const json = parse(direct.text);
+    if (direct.status >= 400) fail(direct.status, json);
+    return json as T;
+  }
+
+  return relay<T>(path, body);
 }
+
 
 
 /** Sends the M-Pesa PIN prompt to the payer's phone. */
