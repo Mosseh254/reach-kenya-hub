@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.create_submission(uuid, uuid, text, text, integer, text, text) FROM authenticated, anon, public;
+GRANT EXECUTE ON FUNCTION public.create_submission(uuid, uuid, text, text, integer, text, text) TO service_role;
