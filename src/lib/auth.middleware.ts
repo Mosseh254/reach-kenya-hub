@@ -62,13 +62,16 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
   });
 
+  let claims: Record<string, unknown> | null = null;
+
   // 1) Preferred: verify claims (local JWKS verification when available).
   try {
     const { data, error } = await supabase.auth.getClaims(token);
     if (!error && data?.claims?.sub) {
-      return next({ context: { supabase, userId: data.claims.sub as string, claims: data.claims } });
+      claims = data.claims as unknown as Record<string, unknown>;
+    } else if (error) {
+      console.warn(`[auth] getClaims failed, falling back to getUser: ${error.message}`);
     }
-    if (error) console.warn(`[auth] getClaims failed, falling back to getUser: ${error.message}`);
   } catch (err) {
     console.warn(
       `[auth] getClaims threw, falling back to getUser: ${err instanceof Error ? err.message : "unknown error"}`,
@@ -76,22 +79,15 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
   }
 
   // 2) Fallback: ask Supabase Auth directly (works without JWKS access).
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
-  if (userError || !userData?.user?.id) {
-    console.error(`[auth] getUser verification failed: ${userError?.message ?? "no user returned"}`);
-    throw new Error("Unauthorized: Invalid token");
+  if (!claims) {
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData?.user?.id) {
+      console.error(`[auth] getUser verification failed: ${userError?.message ?? "no user returned"}`);
+      throw new Error("Unauthorized: Invalid token");
+    }
+    const user = userData.user;
+    claims = { sub: user.id, email: user.email ?? undefined, role: user.role ?? "authenticated" };
   }
 
-  const user = userData.user;
-  return next({
-    context: {
-      supabase,
-      userId: user.id,
-      claims: {
-        sub: user.id,
-        email: user.email ?? undefined,
-        role: user.role ?? "authenticated",
-      } as Record<string, unknown>,
-    },
-  });
+  return next({ context: { supabase, userId: claims["sub"] as string, claims } });
 });
