@@ -91,9 +91,7 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
         sub: user.id,
         email: user.email ?? undefined,
         role: user.role ?? "authenticated",
-      } as unknown as Awaited<ReturnType<typeof supabase.auth.getClaims>>["data"] extends null
-        ? never
-        : Record<string, unknown>,
+      } as Record<string, unknown>,
     },
   });
 });
