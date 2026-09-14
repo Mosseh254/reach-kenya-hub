@@ -6,6 +6,7 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 type ErrorMetadata = {
@@ -32,17 +33,45 @@ function errorMetadata(error: unknown): ErrorMetadata {
   };
 }
 
-function tokenIssuerMatchesBackend(token: string, supabaseUrl: string): boolean | null {
+function tokenIssuerOrigin(token: string): string | null {
   try {
     const encodedPayload = token.split(".")[1];
     if (!encodedPayload) return null;
     const normalized = encodedPayload.replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(Buffer.from(normalized, "base64").toString("utf8")) as { iss?: unknown };
     if (typeof payload.iss !== "string") return null;
-    return new URL(payload.iss).origin === new URL(supabaseUrl).origin;
+    return new URL(payload.iss).origin;
   } catch {
     return null;
   }
+}
+
+type BackendCandidate = { url: string; key: string };
+
+function configuredBackendCandidates(): BackendCandidate[] {
+  const candidates = [
+    { url: process.env["SUPABASE_URL"], key: process.env["SUPABASE_PUBLISHABLE_KEY"] },
+    {
+      url: process.env["NEXT_PUBLIC_SUPABASE_URL"],
+      key: process.env["NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"],
+    },
+    { url: process.env["VITE_SUPABASE_URL"], key: process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] },
+    {
+      url: import.meta.env["VITE_SUPABASE_URL"],
+      key: import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
+    },
+  ];
+  const unique = new Map<string, BackendCandidate>();
+  for (const candidate of candidates) {
+    if (!candidate.url || !candidate.key) continue;
+    try {
+      const url = new URL(candidate.url).origin;
+      unique.set(`${url}\u0000${candidate.key}`, { url, key: candidate.key });
+    } catch {
+      // Invalid configured URLs are ignored; a safe diagnostic is emitted below if none match.
+    }
+  }
+  return [...unique.values()];
 }
 
 async function responseErrorMetadata(response: Response): Promise<ErrorMetadata> {
@@ -97,20 +126,6 @@ function createAuthenticatedDatabaseFetch(supabaseKey: string, token: string, re
 }
 
 export const requireSupabaseAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
-  const SUPABASE_URL = process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
-  const SUPABASE_PUBLISHABLE_KEY =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    const missing = [
-      ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
-      ...(!SUPABASE_PUBLISHABLE_KEY ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
-    ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}.`;
-    console.error(`[auth] ${message}`);
-    throw new Error(message);
-  }
-
   const request = getRequest();
   if (!request?.headers) throw new Error("Unauthorized: No request headers available");
 
@@ -123,53 +138,76 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
   if (token.split(".").length !== 3) throw new Error("Unauthorized: Invalid token");
 
   const requestId = crypto.randomUUID();
-  const issuerMatchesConfiguredBackend = tokenIssuerMatchesBackend(token, SUPABASE_URL);
+  const issuerOrigin = tokenIssuerOrigin(token);
+  const candidates = configuredBackendCandidates();
+  const matchingCandidates = issuerOrigin
+    ? candidates.filter((candidate) => candidate.url === issuerOrigin)
+    : [];
   console.info("[auth-diagnostic] verification_started", {
     requestId,
     method: "getUser",
     getClaims: "not_attempted",
-    issuerMatchesConfiguredBackend,
+    issuerMatchesConfiguredBackend: matchingCandidates.length > 0,
+    configuredCandidateCount: candidates.length,
+    matchingCandidateCount: matchingCandidates.length,
   });
 
-  // Use the SDK's standard fetch path for Auth verification. In particular,
-  // do not apply the opaque-key database shim to auth.getUser(token).
-  const verificationClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
+  if (matchingCandidates.length === 0) {
+    console.error("[auth-diagnostic] auth_configuration_mismatch", {
+      requestId,
+      phase: "configuration",
+      issuerAvailable: issuerOrigin !== null,
+      configuredCandidateCount: candidates.length,
+    });
+    throw new Error("Unauthorized: Invalid token");
+  }
 
-  let user;
-  try {
-    const { data, error } = await verificationClient.auth.getUser(token);
-    if (error || !data.user?.id) {
+  let user: User | undefined;
+  let selectedBackend: BackendCandidate | undefined;
+  for (const [attemptIndex, candidate] of matchingCandidates.entries()) {
+    // Use the SDK's standard fetch path for Auth verification. In particular,
+    // do not apply the opaque-key database shim to auth.getUser(token).
+    const verificationClient = createClient<Database>(candidate.url, candidate.key, {
+      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    });
+    try {
+      const { data, error } = await verificationClient.auth.getUser(token);
+      if (!error && data.user?.id) {
+        user = data.user;
+        selectedBackend = candidate;
+        break;
+      }
       console.error("[auth-diagnostic] get_user_failed", {
         requestId,
         phase: "getUser",
-        issuerMatchesConfiguredBackend,
+        attempt: attemptIndex + 1,
+        issuerMatchesConfiguredBackend: true,
         ...errorMetadata(error ?? new Error("No user returned")),
       });
-      throw new Error("Unauthorized: Invalid token");
+    } catch (error) {
+      console.error("[auth-diagnostic] get_user_threw", {
+        requestId,
+        phase: "getUser",
+        attempt: attemptIndex + 1,
+        issuerMatchesConfiguredBackend: true,
+        ...errorMetadata(error),
+      });
     }
-    user = data.user;
-  } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized: Invalid token") throw error;
-    console.error("[auth-diagnostic] get_user_threw", {
-      requestId,
-      phase: "getUser",
-      issuerMatchesConfiguredBackend,
-      ...errorMetadata(error),
-    });
+  }
+
+  if (!user || !selectedBackend) {
     throw new Error("Unauthorized: Invalid token");
   }
 
   console.info("[auth-diagnostic] verification_succeeded", {
     requestId,
     method: "getUser",
-    issuerMatchesConfiguredBackend,
+    issuerMatchesConfiguredBackend: true,
   });
 
-  const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  const supabase = createClient<Database>(selectedBackend.url, selectedBackend.key, {
     global: {
-      fetch: createAuthenticatedDatabaseFetch(SUPABASE_PUBLISHABLE_KEY, token, requestId),
+      fetch: createAuthenticatedDatabaseFetch(selectedBackend.key, token, requestId),
       headers: { Authorization: `Bearer ${token}` },
     },
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
