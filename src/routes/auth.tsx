@@ -82,15 +82,30 @@ function AuthPage() {
   async function google() {
     setBusy(true);
     if (form.ref.trim()) sessionStorage.setItem("sr_ref", form.ref.trim().toUpperCase());
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) {
-      toast.error(result.error.message ?? "Google sign-in failed");
+    const origin = window.location.origin;
+    // The managed OAuth broker (/~oauth/*) only exists on Lovable-hosted origins.
+    // Elsewhere (e.g. the custom domain served by Vercel) go straight to the provider.
+    const brokerAvailable = /(^|\.)lovable\.app$|(^|\.)lovableproject\.com$|localhost/.test(window.location.hostname);
+    try {
+      if (brokerAvailable) {
+        const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: origin });
+        if (result.error) throw new Error(result.error.message ?? "Google sign-in failed");
+        if (result.redirected) return;
+      } else {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${origin}/auth${search.next ? `?next=${encodeURIComponent(search.next)}` : ""}` },
+        });
+        if (error) throw error;
+        return;
+      }
+      navigate({ to: safeNext(search.next), replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Google sign-in failed");
       setBusy(false);
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: safeNext(search.next), replace: true });
   }
+
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
