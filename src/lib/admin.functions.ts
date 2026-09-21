@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/lib/auth.middleware";
+import { serverDb } from "@/lib/db.server";
 import { assertAdmin } from "@/lib/admin.server";
 import { nairobiWeekStartISO } from "@/lib/week";
 
