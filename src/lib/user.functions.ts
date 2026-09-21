@@ -11,10 +11,7 @@ const ALLOWED_MIME: Record<string, string> = {
   "image/webp": "webp",
 };
 
-async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
-}
+ 
 
 /** Session summary used by the dashboard shell. */
 export const getMe = createServerFn({ method: "GET" })
@@ -62,8 +59,8 @@ export const getDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const sa = await admin();
-    await sa.rpc("expire_activations"); // server-timed expiry sweep
+    const sa = await serverDb(context.supabase);
+    await sa.rpc("app_expire_activations"); // server-timed expiry sweep
     const weekStart = nairobiWeekStartISO();
     const [activations, submissions, wallet, orders, notifications, weekApproved, weekTx] = await Promise.all([
       supabase
@@ -134,7 +131,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const phone = normalizeKenyanPhone(data.phone);
     if (!phone) throw new Error("INVALID_PHONE");
     const { supabase, userId } = context;
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
 
     const [{ data: pkg }, { data: campaign }] = await Promise.all([
       supabase.from("packages").select("*").eq("id", data.packageId).eq("is_active", true).maybeSingle(),
@@ -142,7 +139,7 @@ export const createOrder = createServerFn({ method: "POST" })
     ]);
     if (!pkg || !campaign?.is_active) throw new Error("NOT_FOUND");
 
-    await sa.rpc("expire_activations");
+    await sa.rpc("app_expire_activations");
     const { count } = await supabase
       .from("activations")
       .select("id", { count: "exact", head: true })
@@ -187,7 +184,7 @@ export const createOrder = createServerFn({ method: "POST" })
         event_type: "stk_initiated",
         payload: { mode: adapter.mode, checkoutRequestId: stk.checkoutRequestId, phone },
       });
-      await sa.rpc("log_audit", {
+      await sa.rpc("app_log_audit", {
         p_actor: userId,
         p_actor_type: "user",
         p_action: "order.created",
@@ -197,7 +194,7 @@ export const createOrder = createServerFn({ method: "POST" })
       });
       return { orderId: order.id, mode: adapter.mode, customerMessage: stk.customerMessage };
     } catch (e) {
-      await sa.rpc("fail_order", {
+      await sa.rpc("app_fail_order", {
         p_order_id: order.id,
         p_reason: "Payment request could not be started.",
         p_payload: { error: e instanceof Error ? e.message : String(e) },
@@ -252,10 +249,10 @@ export const simulatePayment = createServerFn({ method: "POST" })
     if (!order) throw new Error("NOT_FOUND");
     if (order.provider !== "mpesa_mock") throw new Error("MOCK_ONLY");
     if (order.status !== "pending") throw new Error("ORDER_NOT_PENDING");
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     if (data.outcome === "success") {
       const receipt = `SBX${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
-      const { data: activationId, error } = await sa.rpc("confirm_order_paid", {
+      const { data: activationId, error } = await sa.rpc("app_confirm_order_paid", {
         p_order_id: order.id,
         p_provider_ref: order.provider_ref ?? "",
         p_receipt: receipt,
@@ -264,7 +261,7 @@ export const simulatePayment = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { status: "paid" as const, activationId };
     }
-    const { error } = await sa.rpc("fail_order", {
+    const { error } = await sa.rpc("app_fail_order", {
       p_order_id: order.id,
       p_reason: "Simulated: request cancelled by user (sandbox).",
       p_payload: { simulated: true, ResultCode: 1032 },
@@ -289,8 +286,8 @@ export const getMyOrders = createServerFn({ method: "GET" })
 export const getMyActivations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const sa = await admin();
-    await sa.rpc("expire_activations");
+    const sa = await serverDb(context.supabase);
+    await sa.rpc("app_expire_activations");
     const { data } = await context.supabase
       .from("activations")
       .select(
@@ -328,7 +325,7 @@ export const submitScreenshot = createServerFn({ method: "POST" })
     const ext = ALLOWED_MIME[data.mime];
     if (!ext) throw new Error("INVALID_FILE");
     const bytes = Buffer.from(data.base64, "base64");
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { data: setting } = await sa.from("app_settings").select("value").eq("key", "max_screenshot_mb").maybeSingle();
     const maxBytes = Number(setting?.value ?? 4) * 1024 * 1024;
     if (bytes.byteLength < 1024 || bytes.byteLength > maxBytes) throw new Error("INVALID_FILE");
@@ -340,7 +337,7 @@ export const submitScreenshot = createServerFn({ method: "POST" })
     const up = await sa.storage.from(SCREENSHOT_BUCKET).upload(path, bytes, { contentType: data.mime, upsert: false });
     if (up.error) throw new Error(up.error.message);
 
-    const { data: submission, error } = await sa.rpc("create_submission", {
+    const { data: submission, error } = await sa.rpc("app_create_submission", {
       p_user_id: context.userId,
       p_activation_id: data.activationId,
       p_storage_path: path,
@@ -365,7 +362,7 @@ export const getMySubmissions = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
     const rows = data ?? [];
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const signed = rows.length
       ? await sa.storage.from(SCREENSHOT_BUCKET).createSignedUrls(rows.map((r) => r.storage_path), 600)
       : { data: [] };
@@ -401,8 +398,8 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const phone = normalizeKenyanPhone(data.phone);
     if (!phone) throw new Error("INVALID_PHONE");
-    const sa = await admin();
-    const { data: wd, error } = await sa.rpc("request_withdrawal", {
+    const sa = await serverDb(context.supabase);
+    const { data: wd, error } = await sa.rpc("app_request_withdrawal", {
       p_user_id: context.userId,
       p_amount: data.amount,
       p_phone: phone,
@@ -445,7 +442,7 @@ export const getReferrals = createServerFn({ method: "GET" })
       supabase.from("referrals").select("*").eq("referrer_id", userId).order("created_at", { ascending: false }),
       supabase.from("app_settings").select("key,value").in("key", ["referral_enabled", "referral_bonus_kes"]),
     ]);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const ids = (referrals.data ?? []).map((r) => r.referred_id);
     const { data: names } = ids.length ? await sa.from("profiles").select("user_id,full_name").in("user_id", ids) : { data: [] };
     const nameById = new Map((names ?? []).map((n) => [n.user_id, n.full_name]));

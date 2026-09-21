@@ -4,17 +4,14 @@ import { requireSupabaseAuth } from "@/lib/auth.middleware";
 import { assertAdmin } from "@/lib/admin.server";
 import { nairobiWeekStartISO } from "@/lib/week";
 
-async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
-}
+ 
 
 export const getAdminOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
-    await sa.rpc("expire_activations");
+    const sa = await serverDb(context.supabase);
+    await sa.rpc("app_expire_activations");
     const count = (q: PromiseLike<{ count: number | null }>) => q.then((r) => r.count ?? 0);
     const weekStart = nairobiWeekStartISO();
     const [
@@ -107,7 +104,7 @@ export const listSubmissionsAdmin = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     let q = sa
       .from("submissions")
       .select("*, activation:activations(expires_at, approved_posts, package:packages(name, reward_per_post_kes, max_rewarded_posts)), campaign:campaigns(title)")
@@ -145,8 +142,8 @@ export const reviewSubmissionAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
-    const { data: row, error } = await sa.rpc("review_submission", {
+    const sa = await serverDb(context.supabase);
+    const { data: row, error } = await sa.rpc("app_review_submission", {
       p_reviewer: context.userId,
       p_submission_id: data.id,
       p_decision: data.decision,
@@ -161,7 +158,7 @@ export const listWithdrawalsAdmin = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ status: z.enum(["requested", "paid", "rejected", "all"]).default("requested") }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     let q = sa.from("withdrawals").select("*").order("created_at", { ascending: true }).limit(100);
     if (data.status !== "all") q = q.eq("status", data.status);
     const { data: rows } = await q;
@@ -185,8 +182,8 @@ export const processWithdrawalAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
-    const { data: row, error } = await sa.rpc("process_withdrawal", {
+    const sa = await serverDb(context.supabase);
+    const { data: row, error } = await sa.rpc("app_process_withdrawal", {
       p_admin: context.userId,
       p_withdrawal_id: data.id,
       p_decision: data.decision,
@@ -202,7 +199,7 @@ export const listUsersAdmin = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ q: z.string().max(80).optional() }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     let q = sa.from("profiles").select("*").order("created_at", { ascending: false }).limit(200);
     if (data.q) q = q.or(`full_name.ilike.%${data.q}%,email.ilike.%${data.q}%,phone.ilike.%${data.q}%`);
     const { data: profiles } = await q;
@@ -231,13 +228,13 @@ export const setUserRoleAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     if (data.userId === context.userId && !data.makeAdmin) throw new Error("You cannot remove your own admin role.");
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     if (data.makeAdmin) {
       await sa.from("user_roles").upsert({ user_id: data.userId, role: "admin" }, { onConflict: "user_id,role" });
     } else {
       await sa.from("user_roles").delete().eq("user_id", data.userId).eq("role", "admin");
     }
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: data.makeAdmin ? "role.admin_granted" : "role.admin_revoked",
@@ -252,7 +249,7 @@ export const listOrdersAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { data: orders } = await sa
       .from("orders")
       .select("*, package:packages(name)")
@@ -268,7 +265,7 @@ export const getAdminSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const [{ data: settings }, { data: packages }] = await Promise.all([
       sa.from("app_settings").select("*").order("key"),
       sa.from("packages").select("*").order("sort_order"),
@@ -296,10 +293,10 @@ export const updateSettingAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ key: z.string().min(1).max(60), value: z.unknown() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { error } = await sa.from("app_settings").update({ value: data.value as never }).eq("key", data.key);
     if (error) throw new Error(error.message);
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: "settings.updated",
@@ -332,12 +329,12 @@ export const upsertPackageAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { id, ...rest } = data;
     const q = id ? sa.from("packages").update(rest).eq("id", id) : sa.from("packages").insert(rest);
     const { error } = await q;
     if (error) throw new Error(error.message);
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: id ? "package.updated" : "package.created",
@@ -352,7 +349,7 @@ export const listAuditAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { data } = await sa.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(300);
     return data ?? [];
   });
@@ -362,7 +359,7 @@ export const getPayoutsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const [{ data: approved }, { data: txs }, { data: withdrawals }, { data: settings }] = await Promise.all([
       sa
         .from("submissions")
@@ -416,7 +413,7 @@ export const releaseRewardsAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const [{ data: approved }, { data: txs }] = await Promise.all([
       sa.from("submissions").select("id, reward_kes").eq("status", "approved").eq("user_id", data.userId).limit(1000),
       sa.from("wallet_transactions").select("ref_id").eq("ref_type", "submission").eq("user_id", data.userId).limit(5000),
@@ -457,7 +454,7 @@ export const releaseRewardsAdmin = createServerFn({ method: "POST" })
       body: `KES ${amountKes.toLocaleString("en-KE")} from approved posts is now available in your wallet.`,
       link: "/wallet",
     });
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: "rewards.released",
@@ -484,11 +481,11 @@ export const payMemberAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { data: wallet } = await sa.from("wallets").select("balance_kes").eq("user_id", data.userId).single();
     if (!wallet || wallet.balance_kes < data.amountKes) throw new Error("Member balance is lower than the payout amount.");
 
-    const { data: wd, error } = await sa.rpc("request_withdrawal", {
+    const { data: wd, error } = await sa.rpc("app_request_withdrawal", {
       p_user_id: data.userId,
       p_amount: data.amountKes,
       p_phone: data.phone,
@@ -497,7 +494,7 @@ export const payMemberAdmin = createServerFn({ method: "POST" })
     const withdrawalId = (wd as { id: string } | null)?.id;
     if (!withdrawalId) throw new Error("Could not create the payout record.");
 
-    const { data: paid, error: payErr } = await sa.rpc("process_withdrawal", {
+    const { data: paid, error: payErr } = await sa.rpc("app_process_withdrawal", {
       p_admin: context.userId,
       p_withdrawal_id: withdrawalId,
       p_decision: "paid",
@@ -541,7 +538,7 @@ export const listCampaignContentAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const [{ data: advertisers }, { data: campaigns }, { data: activeCounts }] = await Promise.all([
       sa.from("advertisers").select("*").order("created_at"),
       sa
@@ -578,7 +575,7 @@ export const upsertAdvertiserAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { id, logo, ...rest } = data;
     const patch: Record<string, unknown> = { ...rest };
     if (logo) patch["logo_url"] = await storeAsset(sa, logo, "advertisers");
@@ -586,7 +583,7 @@ export const upsertAdvertiserAdmin = createServerFn({ method: "POST" })
       ? await sa.from("advertisers").update(patch as never).eq("id", id).select("*").single()
       : await sa.from("advertisers").insert(patch as never).select("*").single();
     if (error) throw new Error(error.message);
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: id ? "advertiser.updated" : "advertiser.created",
@@ -614,7 +611,7 @@ export const upsertCampaignAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { id, cover, ...rest } = data;
     const patch: Record<string, unknown> = { ...rest };
     if (cover) patch["cover_url"] = await storeAsset(sa, cover, "campaigns");
@@ -622,7 +619,7 @@ export const upsertCampaignAdmin = createServerFn({ method: "POST" })
       ? await sa.from("campaigns").update(patch as never).eq("id", id).select("*").single()
       : await sa.from("campaigns").insert(patch as never).select("*").single();
     if (error) throw new Error(error.message);
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: id ? "campaign.updated" : "campaign.created",
@@ -653,7 +650,7 @@ export const saveMaterialAdmin = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     if (data.kind === "image" && !data.file && !data.id) throw new Error("Please choose an image to upload.");
     if (data.kind === "caption" && !data.caption_text?.trim()) throw new Error("Please write the caption text.");
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const patch: Record<string, unknown> = {
       campaign_id: data.campaign_id,
       kind: data.kind,
@@ -666,7 +663,7 @@ export const saveMaterialAdmin = createServerFn({ method: "POST" })
       ? await sa.from("campaign_materials").update(patch as never).eq("id", data.id).select("*").single()
       : await sa.from("campaign_materials").insert(patch as never).select("*").single();
     if (error) throw new Error(error.message);
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: data.id ? "material.updated" : "material.created",
@@ -682,10 +679,10 @@ export const deleteMaterialAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
     const { error } = await sa.from("campaign_materials").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: "material.deleted",
@@ -715,7 +712,7 @@ export const resolveOrderAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const sa = await admin();
+    const sa = await serverDb(context.supabase);
 
     const { data: order, error: readErr } = await sa
       .from("orders")
@@ -727,7 +724,7 @@ export const resolveOrderAdmin = createServerFn({ method: "POST" })
     if (order.status !== "pending") throw new Error("ORDER_ALREADY_RESOLVED");
 
     if (data.decision === "approve") {
-      const { error } = await sa.rpc("confirm_order_paid", {
+      const { error } = await sa.rpc("app_confirm_order_paid", {
         p_order_id: data.id,
         p_provider_ref: order.provider_ref ?? "manual-admin",
         p_receipt: data.receipt && data.receipt.length > 0 ? data.receipt : "MANUAL-ADMIN",
@@ -735,7 +732,7 @@ export const resolveOrderAdmin = createServerFn({ method: "POST" })
       });
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await sa.rpc("fail_order", {
+      const { error } = await sa.rpc("app_fail_order", {
         p_order_id: data.id,
         p_reason: data.note && data.note.length > 0 ? data.note : "Cancelled by admin",
         p_payload: { source: "admin_manual", admin_id: context.userId } as never,
@@ -743,7 +740,7 @@ export const resolveOrderAdmin = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    await sa.rpc("log_audit", {
+    await sa.rpc("app_log_audit", {
       p_actor: context.userId,
       p_actor_type: "admin",
       p_action: data.decision === "approve" ? "order.manually_approved" : "order.manually_cancelled",
