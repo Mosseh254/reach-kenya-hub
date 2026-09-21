@@ -519,7 +519,7 @@ const uploadSchema = z.object({
 
 /** Uploads a campaign asset into private storage and returns a long-lived signed URL. */
 async function storeAsset(
-  sa: Awaited<ReturnType<typeof admin>>,
+  sa: Awaited<ReturnType<typeof serverDb>>,
   file: z.infer<typeof uploadSchema>,
   folder: string,
 ) {
