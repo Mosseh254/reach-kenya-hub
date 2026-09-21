@@ -1,0 +1,21 @@
+revoke all on function public.app_expire_activations() from public, anon;
+revoke all on function public.app_log_audit(uuid, text, text, text, uuid, jsonb) from public, anon;
+revoke all on function public.app_create_submission(uuid, uuid, text, text, integer, text, text) from public, anon;
+revoke all on function public.app_request_withdrawal(uuid, integer, text) from public, anon;
+revoke all on function public.app_review_submission(uuid, uuid, text, text) from public, anon;
+revoke all on function public.app_process_withdrawal(uuid, uuid, text, text, text) from public, anon;
+revoke all on function public.app_release_approved_rewards() from public, anon;
+revoke all on function public.app_fail_order(uuid, text, jsonb) from public, anon;
+revoke all on function public.app_confirm_order_paid(uuid, text, text, jsonb) from public, anon;
+revoke all on function public.app_is_admin() from public, anon;
+
+grant execute on function public.app_is_admin() to authenticated, service_role;
+grant execute on function public.app_expire_activations() to authenticated, service_role;
+grant execute on function public.app_log_audit(uuid, text, text, text, uuid, jsonb) to authenticated, service_role;
+grant execute on function public.app_create_submission(uuid, uuid, text, text, integer, text, text) to authenticated, service_role;
+grant execute on function public.app_request_withdrawal(uuid, integer, text) to authenticated, service_role;
+grant execute on function public.app_review_submission(uuid, uuid, text, text) to authenticated, service_role;
+grant execute on function public.app_process_withdrawal(uuid, uuid, text, text, text) to authenticated, service_role;
+grant execute on function public.app_release_approved_rewards() to authenticated, service_role;
+grant execute on function public.app_fail_order(uuid, text, jsonb) to authenticated, service_role;
+grant execute on function public.app_confirm_order_paid(uuid, text, text, jsonb) to authenticated, service_role;
