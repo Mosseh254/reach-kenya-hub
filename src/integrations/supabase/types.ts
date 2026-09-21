@@ -695,6 +695,152 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      app_confirm_order_paid: {
+        Args: {
+          p_order_id: string
+          p_payload: Json
+          p_provider_ref: string
+          p_receipt: string
+        }
+        Returns: string
+      }
+      app_create_submission: {
+        Args: {
+          p_activation_id: string
+          p_mime: string
+          p_note: string
+          p_sha256: string
+          p_size: number
+          p_storage_path: string
+          p_user_id: string
+        }
+        Returns: {
+          activation_id: string
+          campaign_id: string
+          created_at: string
+          file_sha256: string
+          file_size_bytes: number
+          fraud_flags: Json
+          fraud_score: number
+          id: string
+          mime_type: string
+          note: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reward_kes: number | null
+          status: Database["public"]["Enums"]["submission_status"]
+          storage_path: string
+          submitted_on: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "submissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      app_expire_activations: { Args: never; Returns: number }
+      app_fail_order: {
+        Args: { p_order_id: string; p_payload: Json; p_reason: string }
+        Returns: undefined
+      }
+      app_is_admin: { Args: never; Returns: boolean }
+      app_log_audit: {
+        Args: {
+          p_action: string
+          p_actor: string
+          p_actor_type: string
+          p_entity_id: string
+          p_entity_type: string
+          p_meta: Json
+        }
+        Returns: undefined
+      }
+      app_process_withdrawal: {
+        Args: {
+          p_admin: string
+          p_decision: string
+          p_note: string
+          p_receipt: string
+          p_withdrawal_id: string
+        }
+        Returns: {
+          admin_note: string | null
+          amount_kes: number
+          created_at: string
+          id: string
+          mpesa_receipt: string | null
+          phone: string
+          processed_at: string | null
+          processed_by: string | null
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      app_release_approved_rewards: { Args: never; Returns: number }
+      app_request_withdrawal: {
+        Args: { p_amount: number; p_phone: string; p_user_id: string }
+        Returns: {
+          admin_note: string | null
+          amount_kes: number
+          created_at: string
+          id: string
+          mpesa_receipt: string | null
+          phone: string
+          processed_at: string | null
+          processed_by: string | null
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      app_review_submission: {
+        Args: {
+          p_decision: string
+          p_note: string
+          p_reviewer: string
+          p_submission_id: string
+        }
+        Returns: {
+          activation_id: string
+          campaign_id: string
+          created_at: string
+          file_sha256: string
+          file_size_bytes: number
+          fraud_flags: Json
+          fraud_score: number
+          id: string
+          mime_type: string
+          note: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reward_kes: number | null
+          status: Database["public"]["Enums"]["submission_status"]
+          storage_path: string
+          submitted_on: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "submissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       confirm_order_paid: {
         Args: {
           p_order_id: string
