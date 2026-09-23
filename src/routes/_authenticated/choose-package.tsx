@@ -40,16 +40,19 @@ function ChoosePackagePage() {
         </div>
       )}
 
-      {isError && (
+      {!isLoading && failed && (
         <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
           <h2 className="font-semibold">We could not load the packages</h2>
-          <Button className="mt-4" onClick={() => void refetch()}>
-            Try again
+          <p className="mt-1 text-sm text-muted-foreground">
+            Please check your connection and try again in a moment.
+          </p>
+          <Button className="mt-4" onClick={() => void refetch()} disabled={isFetching}>
+            {isFetching ? "Retrying…" : "Try again"}
           </Button>
         </div>
       )}
 
-      {data && (
+      {data && !failed && (
         <>
           <div className="grid gap-6 md:grid-cols-3">
             {data.packages.map((p, i) => (
