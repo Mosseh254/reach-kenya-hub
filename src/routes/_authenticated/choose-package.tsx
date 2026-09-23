@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { catalogQuery } from "@/routes/index";
 import { PageTitle } from "@/components/site/Bits";
 import { PackageCard } from "@/components/site/PackageCard";
 import { Button } from "@/components/ui/button";
