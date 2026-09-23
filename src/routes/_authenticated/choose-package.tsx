@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { catalogQuery } from "@/routes/index";
 import { PageTitle } from "@/components/site/Bits";
 import { PackageCard } from "@/components/site/PackageCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { kes } from "@/lib/format";
-import { getPublicCatalog } from "@/lib/public.functions";
 
 export const Route = createFileRoute("/_authenticated/choose-package")({
   head: () => ({
@@ -21,10 +21,8 @@ export const Route = createFileRoute("/_authenticated/choose-package")({
 });
 
 function ChoosePackagePage() {
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["catalog"],
-    queryFn: () => getPublicCatalog(),
-  });
+  const { data, isLoading, isError, refetch, isFetching } = useQuery(catalogQuery);
+  const failed = isError || (!!data && (data.error !== null || data.packages.length === 0));
 
   return (
     <>
@@ -42,16 +40,19 @@ function ChoosePackagePage() {
         </div>
       )}
 
-      {isError && (
+      {!isLoading && failed && (
         <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
           <h2 className="font-semibold">We could not load the packages</h2>
-          <Button className="mt-4" onClick={() => void refetch()}>
-            Try again
+          <p className="mt-1 text-sm text-muted-foreground">
+            Please check your connection and try again in a moment.
+          </p>
+          <Button className="mt-4" onClick={() => void refetch()} disabled={isFetching}>
+            {isFetching ? "Retrying…" : "Try again"}
           </Button>
         </div>
       )}
 
-      {data && (
+      {data && !failed && (
         <>
           <div className="grid gap-6 md:grid-cols-3">
             {data.packages.map((p, i) => (
