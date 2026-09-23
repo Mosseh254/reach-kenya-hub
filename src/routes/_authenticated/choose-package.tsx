@@ -21,10 +21,8 @@ export const Route = createFileRoute("/_authenticated/choose-package")({
 });
 
 function ChoosePackagePage() {
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["catalog"],
-    queryFn: () => getPublicCatalog(),
-  });
+  const { data, isLoading, isError, refetch, isFetching } = useQuery(catalogQuery);
+  const failed = isError || (!!data && (data.error !== null || data.packages.length === 0));
 
   return (
     <>
