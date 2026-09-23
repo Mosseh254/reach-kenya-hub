@@ -6,7 +6,6 @@ import { PackageCard } from "@/components/site/PackageCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { kes } from "@/lib/format";
-import { getPublicCatalog } from "@/lib/public.functions";
 
 export const Route = createFileRoute("/_authenticated/choose-package")({
   head: () => ({
